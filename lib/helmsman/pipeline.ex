@@ -15,4 +15,9 @@ defmodule Helmsman.Pipeline do
   def to_pipeline(specs) when is_list(specs) do
     %__MODULE__{specs: specs}
   end
+
+  @spec for_input(t, String.t) :: [Spec.t]
+  def for_input(pipeline, key) do
+    Enum.filter(pipeline.specs, &(key in Spec.input_keys(&1)))
+  end
 end

@@ -25,6 +25,8 @@ defmodule Helmsman.Spec do
     output: %{atom => String.t},
   }
 
+  @type io_key :: String.t
+
   @input_reg ~r{^in\d\d?$}
   @output_reg ~r{^out\d\d?$}
 
@@ -55,21 +57,27 @@ defmodule Helmsman.Spec do
   @spec get_processor(t) :: t
   def get_processor(%__MODULE__{processor: processor}), do: processor
 
-  @spec put_input(t, atom, String.t) :: t
+  @spec put_input(t, atom, io_key) :: t
   def put_input(%__MODULE__{} = spec, key, input) do
     update_in spec.input, &Map.put(&1, key, input)
   end
 
-  @spec get_input(t, atom) :: String.t
+  @spec get_input(t, atom) :: io_key
   def get_input(spec, input), do: spec.input[input]
 
-  @spec put_output(t, atom, String.t) :: t
+  @spec input_keys(t) :: [io_key]
+  def input_keys(spec), do: Map.values(spec.input)
+
+  @spec put_output(t, atom, io_key) :: t
   def put_output(%__MODULE__{} = spec, key, output) do
     update_in spec.output, &Map.put(&1, key, output)
   end
 
-  @spec get_output(t, atom) :: String.t
+  @spec get_output(t, atom) :: io_key
   def get_output(spec, output), do: spec.output[output]
+
+  @spec output_keys(t) :: [io_key]
+  def output_keys(spec), do: Map.values(spec.output)
 
   @doc """
     iex> Helmsman.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3})
@@ -93,7 +101,7 @@ defmodule Helmsman.Spec do
     iex> Helmsman.Spec.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
     %{abc: 1, bcd: 2}
   """
-  def select_regex_keys(nil, regex), do: %{}
+  def select_regex_keys(nil, _regex), do: %{}
   def select_regex_keys(inputs, regex) when is_map(inputs) do
     Enum.reduce inputs, %{}, fn
       {key, val}, acc ->
