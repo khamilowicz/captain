@@ -8,7 +8,18 @@ defmodule Helmsman.Processors do
 
   @spec fetch!(String.t) :: module | no_return()
   def fetch!(processor) do
-    processors[processor] || undefined!(processor)
+    case fetch(processor) do
+      :error -> undefined!(processor)
+      {:ok, processor} -> processor
+    end
+  end
+
+  @spec fetch(String.t) :: {:ok, module} | :error
+  def fetch(processor) do
+    case processors[processor] do
+      nil -> :error
+      processor -> {:ok, processor}
+    end
   end
 
   @spec undefined!(any) :: no_return()
