@@ -16,7 +16,7 @@ defmodule Helmsman.Spec do
   "b"
   """
 
-  alias Helmsman.{Processors, Utils}
+  alias Helmsman.Processors
 
   @type t :: %{
     processor: module,
@@ -26,8 +26,8 @@ defmodule Helmsman.Spec do
 
   @type io_key :: String.t
 
-  @input_reg ~r{^in\d\d?$}
-  @output_reg ~r{^out\d\d?$}
+  @input_reg ~r{^in\d\d?N?$}
+  @output_reg ~r{^out\d\d?N?$}
 
   defstruct [
     processor: NullProcessor,
@@ -48,13 +48,6 @@ defmodule Helmsman.Spec do
     end
   end
 
-  @spec run(t, map) :: map
-  def run(spec, input) do
-    spec.input
-    |> Utils.syllogism_of_maps(input)
-    |> spec.processor.run
-    |> Utils.remap_keys(spec.output)
-  end
 
   @spec put_processor(t, module) :: t
   def put_processor(spec, module) do
@@ -118,5 +111,16 @@ defmodule Helmsman.Spec do
           acc
         end
     end
+  end
+end
+
+defimpl Helmsman.Runnable, for: Helmsman.Spec do
+  alias Helmsman.Utils
+
+  def run(spec, input) do
+    spec.input
+    |> Utils.syllogism_of_maps(input)
+    |> spec.processor.run
+    |> Utils.remap_keys(spec.output)
   end
 end

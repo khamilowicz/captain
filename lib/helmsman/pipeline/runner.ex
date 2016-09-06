@@ -6,22 +6,18 @@ defmodule Helmsman.Pipeline.Runner do
   Directs inputs and outputs between processors, using rules from pipeline.
   """
 
-  alias Helmsman.{Pipeline, Spec}
+  alias Helmsman.{Pipeline, Runnable}
 
   @spec run(Pipeline.t, map) :: {:ok, any} | {:error, String.t}
   def run(pipeline, input) do
-    case Pipeline.for_inputs(pipeline, Map.keys(input)) do
-      [] -> {:ok, input}
-      specs ->
-        new_input = do_run(specs, input)
-        new_pipeline = Pipeline.remove(pipeline, specs)
-        run(new_pipeline, new_input)
-    end
-  end
+    current_pipeline =  Pipeline.for_inputs(pipeline, Map.keys(input))
 
-  def do_run(specs, input) do
-    specs
-    |> Enum.map(&Spec.run(&1, input))
-    |> Enum.reduce(input, &Map.merge/2)
+    if Pipeline.empty?(current_pipeline) do
+      {:ok, input}
+    else
+      new_input = Runnable.run(current_pipeline, input)
+      new_pipeline = Pipeline.subtract(pipeline, current_pipeline)
+      run(new_pipeline, new_input)
+    end
   end
 end

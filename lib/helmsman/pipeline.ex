@@ -26,13 +26,22 @@ defmodule Helmsman.Pipeline do
     update_in pipeline.specs, &(&1 -- specs)
   end
 
+  @spec empty?(t) :: boolean
+  def empty?(%{specs: []}), do: true
+  def empty?(_pipeline), do: false
+
+  @spec subtract(t, t) :: t
+  def subtract(pipeline1, pipeline2) do
+    update_in pipeline1.specs, &(&1 -- pipeline2.specs)
+  end
+
   @doc """
   #TODO: reword this
   Given io_keys, returns specs that can use them
   """
-  @spec for_inputs(t, [String.t]) :: [Spec.t]
+  @spec for_inputs(t, [String.t]) :: t
   def for_inputs(pipeline, keys) do
-    Enum.filter(pipeline.specs, &is_sublist?(keys, Spec.input_keys(&1)))
+    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> is_sublist?(keys, Spec.input_keys(spec)) end)
   end
 
   @doc """
@@ -44,5 +53,16 @@ defmodule Helmsman.Pipeline do
   @spec is_sublist?([], []) :: boolean
   def is_sublist?(list, sublist) do
     Enum.all?(sublist, &(&1 in list))
+  end
+end
+
+defimpl Helmsman.Runnable, for: Helmsman.Pipeline do
+
+  alias Helmsman.Runnable
+
+  def run(pipeline, input) do
+    pipeline.specs
+    |> Enum.map(&Runnable.run(&1, input))
+    |> Enum.reduce(input, &Map.merge/2)
   end
 end
