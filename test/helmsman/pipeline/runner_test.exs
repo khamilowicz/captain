@@ -27,7 +27,14 @@ defmodule OneToVariable do
     send self, {:processor_called, __MODULE__, input}
     %{outN: [%{out1: in1 <> "v"}, %{out1: in1 <> "v"}, %{out1: in1 <> "v"}] }
   end
+end
 
+defmodule VariableToOne do
+  def run(%{inN: inN} = input) do
+    send self, {:processor_called, __MODULE__, input}
+    result = Enum.reduce(inN, "", fn(curr, acc) -> acc <> curr[:in1] end)
+    %{out1: result <> "r" }
+  end
 end
 
 defmodule Helmsman.Pipeline.RunnerTest do
@@ -105,7 +112,33 @@ defmodule Helmsman.Pipeline.RunnerTest do
   end
 
   describe "Given variable output pipeline" do
-    setup [:one_to_one_spec, :one_to_variable_spec, :map_reducer_spec]
+    setup [:one_to_one_spec, :one_to_variable_spec, :variable_to_one_spec, :map_reducer_spec]
+
+    test "Runner.run/1 can reduce outputs of variable specs with input variable spec", context do
+      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      variable_output_spec = context.one_to_variable_spec
+                      |> Spec.put_input(:in1, "b")
+                      |> Spec.put_output(:outN, {"c", %{out1: "e"}})
+
+    variable_input_spec = context.variable_to_one_spec
+                          |> Spec.put_input(:inN, {"c", %{in1: "e"}})
+                          |> Spec.put_output(:out1, "d")
+
+      specs = [
+        first_spec,
+        variable_output_spec,
+        variable_input_spec
+      ]
+
+      variable_pipeline = Pipeline.to_pipeline(specs)
+      assert {:ok, result} = Runner.run(variable_pipeline, %{"a" => "f"})
+
+      assert_received {:processor_called, OneToOne, %{in1: "f"}}
+      assert_received {:processor_called, OneToVariable, %{in1: "fa"}}
+      assert_received {:processor_called, VariableToOne, %{inN: [%{in1: "fav"}, %{in1: "fav"}, %{in1: "fav"}]}}
+
+      assert result["d"] == "favfavfavr"
+    end
 
     test "Runner.run/1 can map outputs of variable specs", context do
       first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")

@@ -136,7 +136,7 @@ defimpl Helmsman.Runnable, for: Helmsman.Spec do
 
   def run(spec, input) do
     spec.input
-    |> Utils.syllogism_of_maps(input)
+    |> Utils.input_joins(input)
     |> spec.processor.run
     |> Utils.remap_keys(spec.output)
   end

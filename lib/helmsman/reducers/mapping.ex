@@ -19,7 +19,7 @@ defimpl Helmsman.Runnable, for: Helmsman.Reducers.Mapping do
 
     pipeline_input =
       spec.input
-      |> Utils.syllogism_of_maps(input)
+      |> Utils.input_joins(input)
       |> Map.get(:inN)
 
     result = Enum.map(pipeline_input, &Runnable.run(spec.pipeline, &1))
