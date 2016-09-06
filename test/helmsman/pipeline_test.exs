@@ -3,8 +3,7 @@ defmodule Helmsman.PipelineTest do
 
   import Helmsman.SpecHelpers
 
-  alias Helmsman.Pipeline
-  alias Helmsman.Spec
+  alias Helmsman.{Pipeline, Spec}
 
   doctest Helmsman.Pipeline
 
