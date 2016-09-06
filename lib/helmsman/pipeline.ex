@@ -18,7 +18,7 @@ defmodule Helmsman.Pipeline do
 
   @spec for_input(t, String.t) :: [Spec.t]
   def for_input(pipeline, key) do
-    Enum.filter(pipeline.specs, &(key in Spec.input_keys(&1)))
+    Enum.filter(pipeline.specs, &Spec.has_input_key?(&1, key))
   end
 
   @spec remove(t, [Spec.t]) :: t
@@ -41,19 +41,9 @@ defmodule Helmsman.Pipeline do
   """
   @spec for_inputs(t, [String.t]) :: t
   def for_inputs(pipeline, keys) do
-    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> is_sublist?(keys, Spec.input_keys(spec)) end)
+    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> Spec.has_input_keys?(spec, keys) end)
   end
 
-  @doc """
-    iex> Helmsman.Pipeline.is_sublist?([1,2,3], [1,2])
-    true
-    iex> Helmsman.Pipeline.is_sublist?([1,2,3], [1,2,4])
-    false
-  """
-  @spec is_sublist?([], []) :: boolean
-  def is_sublist?(list, sublist) do
-    Enum.all?(sublist, &(&1 in list))
-  end
 end
 
 defimpl Helmsman.Runnable, for: Helmsman.Pipeline do

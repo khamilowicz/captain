@@ -26,4 +26,15 @@ defmodule Helmsman.Utils do
       {common_key, new_key}, acc -> Map.put(acc, new_key, map[common_key])
     end
   end
+
+  @doc """
+    iex> Helmsman.Utils.is_sublist?([1,2,3], [1,2])
+    true
+    iex> Helmsman.Utils.is_sublist?([1,2,3], [1,2,4])
+    false
+  """
+  @spec is_sublist?([], []) :: boolean
+  def is_sublist?(list, sublist) do
+    Enum.all?(sublist, &(&1 in list))
+  end
 end

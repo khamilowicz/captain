@@ -16,7 +16,7 @@ defmodule Helmsman.Spec do
   "b"
   """
 
-  alias Helmsman.Processors
+  alias Helmsman.{Processors, Utils}
 
   @type t :: %{
     processor: module,
@@ -67,6 +67,16 @@ defmodule Helmsman.Spec do
 
   @spec input_keys(t) :: [io_key]
   def input_keys(spec), do: Map.values(spec.input)
+
+  @spec has_input_keys?(t, [String.t]) :: boolean
+  def has_input_keys?(spec, keys) do
+    Utils.is_sublist?(keys, input_keys(spec))
+  end
+
+  @spec has_input_keys?(t, String.t) :: boolean
+  def has_input_key?(spec, key) do
+    key in input_keys(spec)
+  end
 
   @spec put_output(t, atom, io_key) :: t
   def put_output(spec, key, output) do
