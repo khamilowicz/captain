@@ -22,6 +22,14 @@ defmodule TwoToOne do
 
 end
 
+defmodule OneToVariable do
+  def run(%{in1: in1} = input) do
+    send self, {:processor_called, __MODULE__, input}
+    %{outN: [%{out1: in1 <> "v"}, %{out1: in1 <> "v"}, %{out1: in1 <> "v"}] }
+  end
+
+end
+
 defmodule Helmsman.Pipeline.RunnerTest do
   use ExUnit.Case, async: true
 
@@ -33,10 +41,23 @@ defmodule Helmsman.Pipeline.RunnerTest do
   alias Helmsman.Pipeline.Runner
 
   describe "Given straight Pipeline" do
-    setup [:one_to_one_spec, :prepare_straight_pipeline]
+    setup [:one_to_one_spec]
 
     test "Runner.run/1 executes processors, passing arguments around", context do
-      assert {:ok, result} = Runner.run(context.straight_pipeline, %{"a" => "f"})
+
+      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      second_spec = context.one_to_one_spec |> Spec.put_input(:in1, "b") |> Spec.put_output(:out1, "c")
+      third_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "c") |> Spec.put_output(:out1, "d")
+
+      specs = [
+        first_spec,
+        second_spec,
+        third_spec
+      ]
+
+      straight_pipeline = Pipeline.to_pipeline(specs)
+
+      assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
       assert_received {:processor_called, OneToOne, %{in1: "f"}}
       assert_received {:processor_called, OneToOne, %{in1: "fa"}}
       assert_received {:processor_called, OneToOne, %{in1: "faa"}}
@@ -45,42 +66,15 @@ defmodule Helmsman.Pipeline.RunnerTest do
   end
 
   describe "Given forked Pipeline" do
-    setup [:one_to_one_spec, :one_to_two_spec, :two_to_one_spec, :prepare_forked_pipeline]
+    setup [:one_to_one_spec, :one_to_two_spec, :two_to_one_spec]
 
     test "Runner.run/1 executes processors, passing arguments around", context do
-      assert {:ok, result} = Runner.run(context.forked_pipeline, %{"a" => "f"})
 
-      assert_received {:processor_called, OneToOne, %{in1: "f"}}
-      assert_received {:processor_called, OneToTwo, %{in1: "fa"}}
-      assert_received {:processor_called, OneToOne, %{in1: "fal"}}
-      assert_received {:processor_called, OneToOne, %{in1: "far"}}
-      assert_received {:processor_called, TwoToOne, %{in1: "fala", in2: "fara"}}
-      assert %{"g" => "falafarac"} = result
-    end
-  end
-
-  ### Setup
-
-  def prepare_straight_pipeline(context) do
-    first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
-    second_spec = context.one_to_one_spec |> Spec.put_input(:in1, "b") |> Spec.put_output(:out1, "c")
-    third_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "c") |> Spec.put_output(:out1, "d")
-
-    specs = [
-      first_spec,
-      second_spec,
-      third_spec
-    ]
-
-    {:ok, Map.put(context, :straight_pipeline, Pipeline.to_pipeline(specs))}
-  end
-
-  def prepare_forked_pipeline(context) do
-    first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
-    forking_spec = context.one_to_two_spec 
-                    |> Spec.put_input(:in1, "b")
-                    |> Spec.put_output(:out1, "c")
-                    |> Spec.put_output(:out2, "d")
+      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      forking_spec = context.one_to_two_spec
+                      |> Spec.put_input(:in1, "b")
+                      |> Spec.put_output(:out1, "c")
+                      |> Spec.put_output(:out2, "d")
 
     left_spec = context.one_to_one_spec |> Spec.put_input(:in1, "c") |> Spec.put_output(:out1, "e")
     right_spec = context.one_to_one_spec |> Spec.put_input(:in1, "d") |> Spec.put_output(:out1, "f")
@@ -98,7 +92,52 @@ defmodule Helmsman.Pipeline.RunnerTest do
       converging_spec
     ]
 
-    {:ok, Map.put(context, :forked_pipeline, Pipeline.to_pipeline(specs))}
+    forked_pipeline = Pipeline.to_pipeline(specs)
+    assert {:ok, result} = Runner.run(forked_pipeline, %{"a" => "f"})
+
+    assert_received {:processor_called, OneToOne, %{in1: "f"}}
+    assert_received {:processor_called, OneToTwo, %{in1: "fa"}}
+    assert_received {:processor_called, OneToOne, %{in1: "fal"}}
+    assert_received {:processor_called, OneToOne, %{in1: "far"}}
+    assert_received {:processor_called, TwoToOne, %{in1: "fala", in2: "fara"}}
+    assert %{"g" => "falafarac"} = result
+    end
   end
 
+  describe "Given variable output pipeline" do
+    setup [:one_to_one_spec, :one_to_variable_spec, :map_reducer_spec]
+
+    test "Runner.run/1 can map outputs of variable specs", context do
+      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      variable_spec = context.one_to_variable_spec
+                      |> Spec.put_input(:in1, "b")
+                      |> Spec.put_output(:outN, {"c", %{out1: "e"}})
+
+      map_one_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "e") |> Spec.put_output(:out1, "output")
+      map_pipeline = Pipeline.to_pipeline([map_one_spec])
+
+      map_proc = context.map_reducer_spec
+                  |> Spec.put_input(:inN, "c")
+                  |> Spec.put_output(:outN, "d")
+                  |> Helmsman.Reducers.Mapping.put_pipeline(map_pipeline)
+
+      specs = [
+        first_spec,
+        variable_spec,
+        map_proc
+      ]
+
+      variable_pipeline = Pipeline.to_pipeline(specs)
+      assert {:ok, result} = Runner.run(variable_pipeline, %{"a" => "f"})
+
+      assert_received {:processor_called, OneToOne, %{in1: "f"}}
+      assert_received {:processor_called, OneToVariable, %{in1: "fa"}}
+      assert_received {:processor_called, OneToOne, %{in1: "fav"}}
+      assert_received {:processor_called, OneToOne, %{in1: "fav"}}
+      assert_received {:processor_called, OneToOne, %{in1: "fav"}}
+
+      assert Enum.map(result["d"], &Map.get(&1, "output")) == ["fava", "fava", "fava"]
+    end
+  end
 end
+
