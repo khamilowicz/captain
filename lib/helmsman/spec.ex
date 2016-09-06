@@ -66,7 +66,14 @@ defmodule Helmsman.Spec do
   def get_input(spec, input), do: spec.input[input]
 
   @spec input_keys(t) :: [io_key]
-  def input_keys(spec), do: Map.values(spec.input)
+  def input_keys(spec) do
+    spec.input
+    |> Map.values
+    |> Enum.map(fn
+      {input_key, _mappings} -> input_key
+      input_key -> input_key
+    end)
+  end
 
   @spec has_input_keys?(t, [String.t]) :: boolean
   def has_input_keys?(spec, keys) do
