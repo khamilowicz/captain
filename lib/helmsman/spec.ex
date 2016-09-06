@@ -1,23 +1,22 @@
 defmodule Helmsman.Spec do
   @moduledoc """
   Converts raw map/json spec into Spec struct
-  Also updates
 
-    Examples
+  Examples
 
-      iex> spec = %Helmsman.Spec{}
-      iex> spec = Helmsman.Spec.put_processor(spec, MyProcessor)
-      iex> Helmsman.Spec.get_processor(spec)
-      MyProcessor
-      iex> spec = Helmsman.Spec.put_input(spec, :in1, "a")
-      iex> spec = Helmsman.Spec.put_output(spec, :out1, "b")
-      iex> Helmsman.Spec.get_input(spec, :in1)
-      "a"
-      iex> Helmsman.Spec.get_output(spec, :out1)
-      "b"
+  iex> spec = %Helmsman.Spec{}
+  iex> spec = Helmsman.Spec.put_processor(spec, MyProcessor)
+  iex> Helmsman.Spec.get_processor(spec)
+  MyProcessor
+  iex> spec = Helmsman.Spec.put_input(spec, :in1, "a")
+  iex> spec = Helmsman.Spec.put_output(spec, :out1, "b")
+  iex> Helmsman.Spec.get_input(spec, :in1)
+  "a"
+  iex> Helmsman.Spec.get_output(spec, :out1)
+  "b"
   """
 
-  alias Helmsman.Processors
+  alias Helmsman.{Processors, Utils}
 
   @type t :: %{
     processor: module,
@@ -49,17 +48,25 @@ defmodule Helmsman.Spec do
     end
   end
 
+  @spec run(t, map) :: map
+  def run(spec, input) do
+    spec.input
+    |> Utils.syllogism_of_maps(input)
+    |> spec.processor.run
+    |> Utils.remap_keys(spec.output)
+  end
+
   @spec put_processor(t, module) :: t
-  def put_processor(%__MODULE__{} = spec, module) do
+  def put_processor(spec, module) do
     %{spec | processor: module}
   end
 
   @spec get_processor(t) :: t
-  def get_processor(%__MODULE__{processor: processor}), do: processor
+  def get_processor(%{processor: processor}), do: processor
 
   @spec put_input(t, atom, io_key) :: t
-  def put_input(%__MODULE__{} = spec, key, input) do
-    update_in spec.input, &Map.put(&1, key, input)
+  def put_input(spec, key, input) do
+    put_in spec.input[key], input
   end
 
   @spec get_input(t, atom) :: io_key
@@ -69,8 +76,8 @@ defmodule Helmsman.Spec do
   def input_keys(spec), do: Map.values(spec.input)
 
   @spec put_output(t, atom, io_key) :: t
-  def put_output(%__MODULE__{} = spec, key, output) do
-    update_in spec.output, &Map.put(&1, key, output)
+  def put_output(spec, key, output) do
+    put_in spec.output[key], output
   end
 
   @spec get_output(t, atom) :: io_key
@@ -80,8 +87,8 @@ defmodule Helmsman.Spec do
   def output_keys(spec), do: Map.values(spec.output)
 
   @doc """
-    iex> Helmsman.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3})
-    %{in1: 1}
+  iex> Helmsman.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3})
+  %{in1: 1}
   """
   @spec to_inputs(map) :: map
   def to_inputs(inputs) do
@@ -89,8 +96,8 @@ defmodule Helmsman.Spec do
   end
 
   @doc """
-    iex> Helmsman.Spec.to_outputs(%{"out1234" => 1, "out10" => 2, "malice" => 3})
-    %{out10: 2}
+  iex> Helmsman.Spec.to_outputs(%{"out1234" => 1, "out10" => 2, "malice" => 3})
+  %{out10: 2}
   """
   @spec to_outputs(map) :: map
   def to_outputs(inputs) do
@@ -98,8 +105,8 @@ defmodule Helmsman.Spec do
   end
 
   @doc """
-    iex> Helmsman.Spec.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
-    %{abc: 1, bcd: 2}
+  iex> Helmsman.Spec.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
+  %{abc: 1, bcd: 2}
   """
   def select_regex_keys(nil, _regex), do: %{}
   def select_regex_keys(inputs, regex) when is_map(inputs) do
