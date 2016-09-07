@@ -18,8 +18,12 @@ defmodule Helmsman.Spec do
 
   alias Helmsman.{Processors, Utils}
 
+  @type status :: :prepared | :failed | :done
+
   @type t :: %{
     processor: module,
+    required: boolean,
+    status: status,
     input: %{atom => String.t},
     output: %{atom => String.t},
   }
@@ -31,6 +35,8 @@ defmodule Helmsman.Spec do
 
   defstruct [
     processor: NullProcessor,
+    required: false,
+    status: :prepared,
     input: %{},
     output: %{}
   ]
@@ -46,6 +52,11 @@ defmodule Helmsman.Spec do
           output: to_outputs(raw_spec["output"]),
         }
     end
+  end
+
+  @spec prepared([t]) :: [t]
+  def prepared(specs) do
+    Enum.filter(specs, & &1.status == :prepared)
   end
 
   @spec put_processor(t, module) :: t
@@ -94,12 +105,28 @@ end
 defimpl Helmsman.Runnable, for: Helmsman.Spec do
   alias Helmsman.Utils
 
+  def failed?(spec), do: spec.status == :failed
+  def done?(spec), do: spec.status == :done
+  def required?(spec), do: spec.required
+
+  def fail(spec) do
+    %{spec | status: :failed}
+  end
+
+  def done(spec) do
+    %{spec | status: :done}
+  end
+
   def run(spec, input) do
-    result =
-      spec.input
-      |> Utils.input_joins(input)
-      |> spec.processor.run
-      |> Utils.remap_keys(spec.output)
-    {spec, result}
+    try do
+      result =
+        spec.input
+        |> Utils.input_joins(input)
+        |> spec.processor.run
+        |> Utils.remap_keys(spec.output)
+      {done(spec), result}
+    catch
+      any -> {fail(spec), %{error: any}}
+    end
   end
 end

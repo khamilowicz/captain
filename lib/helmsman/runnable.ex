@@ -4,4 +4,13 @@ defprotocol Helmsman.Runnable do
   @doc "Returns new runnable with result as map with out* keys"
   @spec run(Helmsman.Runnable.t, map) :: {Helmsman.Runnable.t, map}
   def run(runnable, input)
+
+  @doc "Changes status of runnable to :failed"
+  def fail(runnable)
+  @doc "Changes status of runnable to :done"
+  def done(runnable)
+
+  def done?(runnable)
+  def failed?(runnable)
+  def required?(runnable)
 end

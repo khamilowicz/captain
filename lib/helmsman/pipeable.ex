@@ -1,6 +1,8 @@
 defprotocol Helmsman.Pipeable do
   @dialyzer {:nowarn_function, __protocol__: 1}
 
+  def required(pipeable, switch \\ true)
+
   def has_input_key?(pipeable, key)
   def has_input_keys?(pipeable, key)
 
@@ -20,6 +22,11 @@ defimpl Helmsman.Pipeable, for: Any do
   alias Helmsman.Utils
 
   @type io_key :: String.t
+
+  @spec required(Helmsman.Pipeable.t, boolean) :: Helmsman.Pipeable.t
+  def required(spec, switch \\ true) do
+    %{spec | required: switch}
+  end
 
   @spec put_input(Helmsman.Pipeable.t, atom, io_key) :: Helmsman.Pipeable.t
   def put_input(spec, key, input) do

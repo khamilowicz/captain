@@ -4,6 +4,7 @@ defmodule Helmsman.Reducers.Mapping do
 
   defstruct [
     pipeline: nil,
+    status: :prepared,
     input: %{},
     output: %{}
   ]
@@ -16,6 +17,17 @@ end
 defimpl Helmsman.Runnable, for: Helmsman.Reducers.Mapping do
 
   alias Helmsman.{Utils, Runnable}
+  def failed?(spec), do: spec.status == :failed
+  def done?(spec), do: spec.status == :done
+  def required?(spec), do: spec.required
+
+  def fail(spec) do
+    %{spec | status: :fail}
+  end
+
+  def done(spec) do
+    %{spec | status: :done}
+  end
 
   def run(spec, input) do
 
@@ -28,6 +40,6 @@ defimpl Helmsman.Runnable, for: Helmsman.Reducers.Mapping do
     {new_specs, outputs} = pipeline_input
               |> Enum.map(&Runnable.run(spec.pipeline, &1))
               |> Utils.transpose_tuples
-    {spec, %{spec.output[:outN] => outputs}}
+    {done(spec), %{spec.output[:outN] => outputs}}
   end
 end

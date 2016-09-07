@@ -6,6 +6,15 @@ defmodule OneToOne do
   end
 end
 
+defmodule FailingOneToOne do
+
+  def run(%{in1: in1} = input) do
+    send self, {:processor_called, __MODULE__, input}
+    throw("Important error")
+    %{out1: in1 <> "a"}
+  end
+end
+
 defmodule OneToTwo do
 
   def run(%{in1: in1} = input) do
@@ -48,7 +57,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
   alias Helmsman.Pipeline.Runner
 
   describe "Given straight Pipeline" do
-    setup [:one_to_one_spec]
+    setup [:one_to_one_spec, :failing_one_to_one_spec]
 
     test "Runner.run/1 executes processors, passing arguments around", context do
 
@@ -69,6 +78,31 @@ defmodule Helmsman.Pipeline.RunnerTest do
       assert_received {:processor_called, OneToOne, %{in1: "fa"}}
       assert_received {:processor_called, OneToOne, %{in1: "faa"}}
       assert result["d"] == "faaa"
+    end
+
+    test "Runner.run/1 executes processors, returns error if requred spec fails", context do
+
+      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
+      second_spec = context.failing_one_to_one_spec |> Pipeable.put_input(:in1, "b") |> Pipeable.put_output(:out1, "c")
+      third_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "d")
+
+      required_spec = second_spec |> Pipeable.required
+
+      specs = [
+        first_spec,
+        required_spec,
+        third_spec
+      ]
+
+      straight_pipeline = Pipeline.to_pipeline(specs)
+
+      assert {:error, result} = Runner.run(straight_pipeline, %{"a" => "f"})
+      assert_received {:processor_called, OneToOne, %{in1: "f"}}
+      assert_received {:processor_called, FailingOneToOne, %{in1: "fa"}}
+      refute_received {:processor_called, OneToOne, _a}
+
+      #TODO: Change to actual
+      assert result[:error] == "Important error"
     end
   end
 

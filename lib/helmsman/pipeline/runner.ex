@@ -10,11 +10,13 @@ defmodule Helmsman.Pipeline.Runner do
 
   @spec run(Pipeline.t, map) :: {:ok, any} | {:error, String.t}
   def run(pipeline, input) do
-    if Pipeline.empty?(pipeline) do
-      {:ok, input}
-    else
-      {new_pipeline, new_input} = Runnable.run(pipeline, input)
-      run(new_pipeline, new_input)
+    case Pipeline.status(pipeline) do
+      #TODO: add reason
+      :failed -> {:error, input}
+      :done -> {:ok, input}
+      _other ->
+        {new_pipeline, new_input} = Runnable.run(pipeline, input)
+        run(new_pipeline, new_input)
     end
   end
 end

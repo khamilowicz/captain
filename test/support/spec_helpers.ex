@@ -64,6 +64,16 @@ defmodule Helmsman.SpecHelpers do
     {:ok, Map.put(context, :variable_to_one_spec, spec)}
   end
 
+  def failing_one_to_one_spec(context) do
+    spec =
+      %Spec{}
+      |> Spec.put_processor(FailingOneToOne)
+      |> Pipeable.put_input(:inN, "a")
+      |> Pipeable.put_output(:out1, "b")
+
+    {:ok, Map.put(context, :failing_one_to_one_spec, spec)}
+  end
+
   def map_reducer_spec(context) do
     spec =
       %Mapping{}
