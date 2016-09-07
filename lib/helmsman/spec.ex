@@ -8,11 +8,11 @@ defmodule Helmsman.Spec do
   iex> spec = Helmsman.Spec.put_processor(spec, MyProcessor)
   iex> Helmsman.Spec.get_processor(spec)
   MyProcessor
-  iex> spec = Helmsman.Spec.put_input(spec, :in1, "a")
-  iex> spec = Helmsman.Spec.put_output(spec, :out1, "b")
-  iex> Helmsman.Spec.get_input(spec, :in1)
+  iex> spec = Helmsman.Pipeable.put_input(spec, :in1, "a")
+  iex> spec = Helmsman.Pipeable.put_output(spec, :out1, "b")
+  iex> Helmsman.Pipeable.get_input(spec, :in1)
   "a"
-  iex> Helmsman.Spec.get_output(spec, :out1)
+  iex> Helmsman.Pipeable.get_output(spec, :out1)
   "b"
   """
 
@@ -24,10 +24,10 @@ defmodule Helmsman.Spec do
     output: %{atom => String.t},
   }
 
-  @type io_key :: String.t
-
   @input_reg ~r{^in\d\d?N?$}
   @output_reg ~r{^out\d\d?N?$}
+
+  @derive [Helmsman.Pipeable]
 
   defstruct [
     processor: NullProcessor,
@@ -48,7 +48,6 @@ defmodule Helmsman.Spec do
     end
   end
 
-
   @spec put_processor(t, module) :: t
   def put_processor(spec, module) do
     %{spec | processor: module}
@@ -56,45 +55,6 @@ defmodule Helmsman.Spec do
 
   @spec get_processor(t) :: t
   def get_processor(%{processor: processor}), do: processor
-
-  @spec put_input(t, atom, io_key) :: t
-  def put_input(spec, key, input) do
-    put_in spec.input[key], input
-  end
-
-  @spec get_input(t, atom) :: io_key
-  def get_input(spec, input), do: spec.input[input]
-
-  @spec input_keys(t) :: [io_key]
-  def input_keys(spec) do
-    spec.input
-    |> Map.values
-    |> Enum.map(fn
-      {input_key, _mappings} -> input_key
-      input_key -> input_key
-    end)
-  end
-
-  @spec has_input_keys?(t, [String.t]) :: boolean
-  def has_input_keys?(spec, keys) do
-    Utils.is_sublist?(keys, input_keys(spec))
-  end
-
-  @spec has_input_keys?(t, String.t) :: boolean
-  def has_input_key?(spec, key) do
-    key in input_keys(spec)
-  end
-
-  @spec put_output(t, atom, io_key) :: t
-  def put_output(spec, key, output) do
-    put_in spec.output[key], output
-  end
-
-  @spec get_output(t, atom) :: io_key
-  def get_output(spec, output), do: spec.output[output]
-
-  @spec output_keys(t) :: [io_key]
-  def output_keys(spec), do: Map.values(spec.output)
 
   @doc """
   iex> Helmsman.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3})
@@ -135,9 +95,11 @@ defimpl Helmsman.Runnable, for: Helmsman.Spec do
   alias Helmsman.Utils
 
   def run(spec, input) do
-    spec.input
-    |> Utils.input_joins(input)
-    |> spec.processor.run
-    |> Utils.remap_keys(spec.output)
+    result =
+      spec.input
+      |> Utils.input_joins(input)
+      |> spec.processor.run
+      |> Utils.remap_keys(spec.output)
+    {spec, result}
   end
 end

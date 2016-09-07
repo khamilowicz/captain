@@ -1,6 +1,6 @@
 defmodule Helmsman.Pipeline do
 
-  alias Helmsman.Spec
+  alias Helmsman.{Spec, Pipeable}
 
   @type t :: %__MODULE__{
     specs: [Spec.t]
@@ -18,7 +18,7 @@ defmodule Helmsman.Pipeline do
 
   @spec for_input(t, String.t) :: [Spec.t]
   def for_input(pipeline, key) do
-    Enum.filter(pipeline.specs, &Spec.has_input_key?(&1, key))
+    Enum.filter(pipeline.specs, &Pipeable.has_input_key?(&1, key))
   end
 
   @spec remove(t, [Spec.t]) :: t
@@ -41,18 +41,27 @@ defmodule Helmsman.Pipeline do
   """
   @spec for_inputs(t, [String.t]) :: t
   def for_inputs(pipeline, keys) do
-    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> Spec.has_input_keys?(spec, keys) end)
+    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> Pipeable.has_input_keys?(spec, keys) end)
   end
 
 end
 
 defimpl Helmsman.Runnable, for: Helmsman.Pipeline do
 
-  alias Helmsman.Runnable
+  alias Helmsman.{Runnable, Pipeline, Utils}
 
   def run(pipeline, input) do
-    pipeline.specs
-    |> Enum.map(&Runnable.run(&1, input))
-    |> Enum.reduce(input, &Map.merge/2)
+    current_pipeline =
+      Pipeline.for_inputs(pipeline, Map.keys(input))
+
+    #TODO: Use new specs and pipeline to create new pipe
+    {new_specs, outputs} =
+      current_pipeline.specs
+      |> Enum.map(&Runnable.run(&1, input))
+      |> Utils.transpose_tuples
+
+    result = Enum.reduce(outputs, input, &Map.merge/2)
+
+    {Pipeline.subtract(pipeline, current_pipeline), result}
   end
 end

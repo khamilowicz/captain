@@ -43,4 +43,16 @@ defmodule Helmsman.Utils do
   def is_sublist?(list, sublist) do
     Enum.all?(sublist, &(&1 in list))
   end
+
+  @doc """
+  Changes list of tuples into tuple of lists
+
+    iex> Helmsman.Utils.transpose_tuples([{1, "a"}, {2, "b"}, {3, "c"}])
+    {[1,2,3], ["a", "b", "c"]}
+  """
+  def transpose_tuples(tuples) when is_list(tuples) do
+    Enum.reduce Enum.reverse(tuples), {[], []}, fn
+      {f, s}, {firsts, seconds} -> {[f | firsts], [s | seconds]}
+    end
+  end
 end

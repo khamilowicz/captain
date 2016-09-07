@@ -3,7 +3,7 @@ defmodule Helmsman.PipelineTest do
 
   import Helmsman.SpecHelpers
 
-  alias Helmsman.{Pipeline, Spec}
+  alias Helmsman.{Pipeline, Pipeable}
 
   doctest Helmsman.Pipeline
 
@@ -22,8 +22,8 @@ defmodule Helmsman.PipelineTest do
       assert [a_spec] = Pipeline.for_input(context.pipeline, "a")
       assert [b_spec] = Pipeline.for_input(context.pipeline, "b")
 
-      assert Spec.get_input(a_spec, :in1) == "a"
-      assert Spec.get_input(b_spec, :in1) == "b"
+      assert Pipeable.get_input(a_spec, :in1) == "a"
+      assert Pipeable.get_input(b_spec, :in1) == "b"
     end
   end
 

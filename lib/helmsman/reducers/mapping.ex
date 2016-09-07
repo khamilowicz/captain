@@ -1,5 +1,7 @@
 defmodule Helmsman.Reducers.Mapping do
 
+  @derive [Helmsman.Pipeable]
+
   defstruct [
     pipeline: nil,
     input: %{},
@@ -22,7 +24,10 @@ defimpl Helmsman.Runnable, for: Helmsman.Reducers.Mapping do
       |> Utils.input_joins(input)
       |> Map.get(:inN)
 
-    result = Enum.map(pipeline_input, &Runnable.run(spec.pipeline, &1))
-    %{spec.output[:outN] => result}
+    #TODO: Use new specs and pipeline to create new pipe
+    {new_specs, outputs} = pipeline_input
+              |> Enum.map(&Runnable.run(spec.pipeline, &1))
+              |> Utils.transpose_tuples
+    {spec, %{spec.output[:outN] => outputs}}
   end
 end

@@ -44,7 +44,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
   import Helmsman.SpecHelpers
 
-  alias Helmsman.{Pipeline, Spec}
+  alias Helmsman.{Pipeline, Pipeable}
   alias Helmsman.Pipeline.Runner
 
   describe "Given straight Pipeline" do
@@ -52,9 +52,9 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
     test "Runner.run/1 executes processors, passing arguments around", context do
 
-      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
-      second_spec = context.one_to_one_spec |> Spec.put_input(:in1, "b") |> Spec.put_output(:out1, "c")
-      third_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "c") |> Spec.put_output(:out1, "d")
+      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
+      second_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "b") |> Pipeable.put_output(:out1, "c")
+      third_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "d")
 
       specs = [
         first_spec,
@@ -77,19 +77,19 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
     test "Runner.run/1 executes processors, passing arguments around", context do
 
-      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       forking_spec = context.one_to_two_spec
-                      |> Spec.put_input(:in1, "b")
-                      |> Spec.put_output(:out1, "c")
-                      |> Spec.put_output(:out2, "d")
+                      |> Pipeable.put_input(:in1, "b")
+                      |> Pipeable.put_output(:out1, "c")
+                      |> Pipeable.put_output(:out2, "d")
 
-    left_spec = context.one_to_one_spec |> Spec.put_input(:in1, "c") |> Spec.put_output(:out1, "e")
-    right_spec = context.one_to_one_spec |> Spec.put_input(:in1, "d") |> Spec.put_output(:out1, "f")
+    left_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "e")
+    right_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "d") |> Pipeable.put_output(:out1, "f")
 
     converging_spec = context.two_to_one_spec
-                      |> Spec.put_input(:in1, "e")
-                      |> Spec.put_input(:in2, "f")
-                      |> Spec.put_output(:out1, "g")
+                      |> Pipeable.put_input(:in1, "e")
+                      |> Pipeable.put_input(:in2, "f")
+                      |> Pipeable.put_output(:out1, "g")
 
     specs = [
       first_spec,
@@ -115,14 +115,14 @@ defmodule Helmsman.Pipeline.RunnerTest do
     setup [:one_to_one_spec, :one_to_variable_spec, :variable_to_one_spec, :map_reducer_spec]
 
     test "Runner.run/1 can reduce outputs of variable specs with input variable spec", context do
-      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       variable_output_spec = context.one_to_variable_spec
-                      |> Spec.put_input(:in1, "b")
-                      |> Spec.put_output(:outN, {"c", %{out1: "e"}})
+                      |> Pipeable.put_input(:in1, "b")
+                      |> Pipeable.put_output(:outN, {"c", %{out1: "e"}})
 
     variable_input_spec = context.variable_to_one_spec
-                          |> Spec.put_input(:inN, {"c", %{in1: "e"}})
-                          |> Spec.put_output(:out1, "d")
+                          |> Pipeable.put_input(:inN, {"c", %{in1: "e"}})
+                          |> Pipeable.put_output(:out1, "d")
 
       specs = [
         first_spec,
@@ -141,17 +141,17 @@ defmodule Helmsman.Pipeline.RunnerTest do
     end
 
     test "Runner.run/1 can map outputs of variable specs", context do
-      first_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "a") |> Spec.put_output(:out1, "b")
+      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       variable_spec = context.one_to_variable_spec
-                      |> Spec.put_input(:in1, "b")
-                      |> Spec.put_output(:outN, {"c", %{out1: "e"}})
+                      |> Pipeable.put_input(:in1, "b")
+                      |> Pipeable.put_output(:outN, {"c", %{out1: "e"}})
 
-      map_one_spec  = context.one_to_one_spec |> Spec.put_input(:in1, "e") |> Spec.put_output(:out1, "output")
+      map_one_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "e") |> Pipeable.put_output(:out1, "output")
       map_pipeline = Pipeline.to_pipeline([map_one_spec])
 
       map_proc = context.map_reducer_spec
-                  |> Spec.put_input(:inN, "c")
-                  |> Spec.put_output(:outN, "d")
+                  |> Pipeable.put_input(:inN, "c")
+                  |> Pipeable.put_output(:outN, "d")
                   |> Helmsman.Reducers.Mapping.put_pipeline(map_pipeline)
 
       specs = [

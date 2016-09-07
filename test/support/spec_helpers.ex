@@ -1,6 +1,6 @@
 defmodule Helmsman.SpecHelpers do
 
-  alias Helmsman.Spec
+  alias Helmsman.{Spec, Pipeable}
   alias Helmsman.Reducers.Mapping
 
   def one_to_one_raw_spec(context) do
@@ -16,8 +16,8 @@ defmodule Helmsman.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(OneToOne)
-      |> Spec.put_input(:in1, "a")
-      |> Spec.put_output(:out1, "b")
+      |> Pipeable.put_input(:in1, "a")
+      |> Pipeable.put_output(:out1, "b")
 
     {:ok, Map.put(context, :one_to_one_spec, spec)}
   end
@@ -26,9 +26,9 @@ defmodule Helmsman.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(OneToTwo)
-      |> Spec.put_input(:in1, "b")
-      |> Spec.put_output(:out1, "c")
-      |> Spec.put_output(:out2, "d")
+      |> Pipeable.put_input(:in1, "b")
+      |> Pipeable.put_output(:out1, "c")
+      |> Pipeable.put_output(:out2, "d")
 
     {:ok, Map.put(context, :one_to_two_spec, spec)}
   end
@@ -37,9 +37,9 @@ defmodule Helmsman.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(TwoToOne)
-      |> Spec.put_input(:in1, "c")
-      |> Spec.put_input(:in2, "d")
-      |> Spec.put_output(:out2, "e")
+      |> Pipeable.put_input(:in1, "c")
+      |> Pipeable.put_input(:in2, "d")
+      |> Pipeable.put_output(:out2, "e")
 
     {:ok, Map.put(context, :two_to_one_spec, spec)}
   end
@@ -48,8 +48,8 @@ defmodule Helmsman.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(OneToVariable)
-      |> Spec.put_input(:in1, "a")
-      |> Spec.put_output(:outN, "b")
+      |> Pipeable.put_input(:in1, "a")
+      |> Pipeable.put_output(:outN, "b")
 
     {:ok, Map.put(context, :one_to_variable_spec, spec)}
   end
@@ -58,8 +58,8 @@ defmodule Helmsman.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(VariableToOne)
-      |> Spec.put_input(:inN, "a")
-      |> Spec.put_output(:out1, "b")
+      |> Pipeable.put_input(:inN, "a")
+      |> Pipeable.put_output(:out1, "b")
 
     {:ok, Map.put(context, :variable_to_one_spec, spec)}
   end
@@ -67,8 +67,8 @@ defmodule Helmsman.SpecHelpers do
   def map_reducer_spec(context) do
     spec =
       %Mapping{}
-      |> Spec.put_input(:inN, "a")
-      |> Spec.put_output(:outN, "b")
+      |> Pipeable.put_input(:inN, "a")
+      |> Pipeable.put_output(:outN, "b")
 
     {:ok, Map.put(context, :map_reducer_spec, spec)}
   end
