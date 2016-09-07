@@ -34,6 +34,22 @@ defmodule Helmsman.Utils do
   end
 
   @doc """
+  iex> Helmsman.Utils.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
+  %{abc: 1, bcd: 2}
+  """
+  def select_regex_keys(nil, _regex), do: %{}
+  def select_regex_keys(inputs, regex) when is_map(inputs) do
+    Enum.reduce inputs, %{}, fn
+      {key, val}, acc ->
+        if key =~ regex do
+          Map.put(acc, String.to_atom(key), val)
+        else
+          acc
+        end
+    end
+  end
+
+  @doc """
     iex> Helmsman.Utils.is_sublist?([1,2,3], [1,2])
     true
     iex> Helmsman.Utils.is_sublist?([1,2,3], [1,2,4])

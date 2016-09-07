@@ -1,6 +1,6 @@
 defmodule Helmsman.Pipeline do
 
-  alias Helmsman.{Spec, Pipeable, Runnable}
+  alias Helmsman.{Spec, Pipeable, Runnable, Utils}
 
   @type status :: :prepared | :running | :done | :failed
 
@@ -8,6 +8,8 @@ defmodule Helmsman.Pipeline do
     specs: [Spec.t],
     status: status
   }
+
+  @derive [Helmsman.Runnable]
 
   defstruct [
     specs: [],
@@ -25,9 +27,23 @@ defmodule Helmsman.Pipeline do
     Enum.filter(pipeline.specs, &Pipeable.has_input_key?(&1, key))
   end
 
+  @doc """
+  #TODO: reword this
+  Given io_keys, returns specs that can use them
+  """
+  @spec for_inputs(t, [String.t]) :: t
+  def for_inputs(pipeline, keys) do
+    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> Pipeable.has_input_keys?(spec, keys) end)
+  end
+
   @spec append_specs(t, [Spec.t]) :: t
   def append_specs(pipeline, specs) do
     %{pipeline | specs: pipeline.specs ++ specs}
+  end
+
+  @spec prepared_specs(t) :: [Spec.t]
+  def prepared_specs(pipeline) do
+    pipeline.specs |> Enum.filter(&Runnable.prepared?/1)
   end
 
   @spec update_status(t) :: t
@@ -42,15 +58,6 @@ defmodule Helmsman.Pipeline do
     end
   end
 
-  @spec remove(t, [Spec.t]) :: t
-  def remove(pipeline, specs) do
-    update_in pipeline.specs, &(&1 -- specs)
-  end
-
-  @spec empty?(t) :: boolean
-  def empty?(%{specs: []}), do: true
-  def empty?(_pipeline), do: false
-
   @spec status(t) :: status
   def status(%{status: status}), do: status
 
@@ -59,53 +66,25 @@ defmodule Helmsman.Pipeline do
     update_in pipeline.specs, &(&1 -- specs)
   end
 
-  @doc """
-  #TODO: reword this
-  Given io_keys, returns specs that can use them
-  """
-  @spec for_inputs(t, [String.t]) :: t
-  def for_inputs(pipeline, keys) do
-    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> Pipeable.has_input_keys?(spec, keys) end)
-  end
-
-end
-
-defimpl Helmsman.Runnable, for: Helmsman.Pipeline do
-
-  alias Helmsman.{Runnable, Pipeline, Utils, Spec}
-
-  def failed?(pipeline), do: pipeline.status == :failed
-  def done?(pipeline), do: pipeline.status == :done
-  def required?(pipeline), do: pipeline.required
-
-  def fail(pipeline) do
-    %{pipeline | status: :failed}
-  end
-
-  def done(pipeline) do
-    %{pipeline | status: :done}
-  end
-
   def run(pipeline, input) do
 
     current_pipeline =
-      Pipeline.for_inputs(pipeline, Map.keys(input))
-      |> Pipeline.update_status
+      for_inputs(pipeline, Map.keys(input))
+      |> update_status
 
-      if Pipeline.status(current_pipeline) in [:running, :prepared] do
-        #TODO: Use new specs and pipeline to create new pipe
+      if status(current_pipeline) in [:running, :prepared] do
         {new_specs, outputs} =
-          current_pipeline.specs
-          |> Spec.prepared
+          current_pipeline
+          |> prepared_specs
           |> Enum.map(&Runnable.run(&1, input))
           |> Utils.transpose_tuples
 
 
         result = Enum.reduce(outputs, input, &Map.merge/2)
         new_pipeline = pipeline
-                        |> Pipeline.remove_specs(current_pipeline.specs |> Spec.prepared)
-                        |> Pipeline.append_specs(new_specs)
-                        |> Pipeline.update_status
+                        |> remove_specs(current_pipeline |> prepared_specs)
+                        |> append_specs(new_specs)
+                        |> update_status
 
         {new_pipeline, result}
       else

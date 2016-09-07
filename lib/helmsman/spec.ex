@@ -16,7 +16,7 @@ defmodule Helmsman.Spec do
   "b"
   """
 
-  alias Helmsman.{Processors, Utils}
+  alias Helmsman.{Processors, Utils, Runnable}
 
   @type status :: :prepared | :failed | :done
 
@@ -31,7 +31,7 @@ defmodule Helmsman.Spec do
   @input_reg ~r{^in\d\d?N?$}
   @output_reg ~r{^out\d\d?N?$}
 
-  @derive [Helmsman.Pipeable]
+  @derive [Helmsman.Pipeable, Helmsman.Runnable]
 
   defstruct [
     processor: NullProcessor,
@@ -54,17 +54,12 @@ defmodule Helmsman.Spec do
     end
   end
 
-  @spec prepared([t]) :: [t]
-  def prepared(specs) do
-    Enum.filter(specs, & &1.status == :prepared)
-  end
-
   @spec put_processor(t, module) :: t
   def put_processor(spec, module) do
     %{spec | processor: module}
   end
 
-  @spec get_processor(t) :: t
+  @spec get_processor(t) :: module
   def get_processor(%{processor: processor}), do: processor
 
   @doc """
@@ -73,7 +68,7 @@ defmodule Helmsman.Spec do
   """
   @spec to_inputs(map) :: map
   def to_inputs(inputs) do
-    select_regex_keys(inputs, @input_reg)
+    Utils.select_regex_keys(inputs, @input_reg)
   end
 
   @doc """
@@ -82,39 +77,7 @@ defmodule Helmsman.Spec do
   """
   @spec to_outputs(map) :: map
   def to_outputs(inputs) do
-    select_regex_keys(inputs, @output_reg)
-  end
-
-  @doc """
-  iex> Helmsman.Spec.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
-  %{abc: 1, bcd: 2}
-  """
-  def select_regex_keys(nil, _regex), do: %{}
-  def select_regex_keys(inputs, regex) when is_map(inputs) do
-    Enum.reduce inputs, %{}, fn
-      {key, val}, acc ->
-        if key =~ regex do
-          Map.put(acc, String.to_atom(key), val)
-        else
-          acc
-        end
-    end
-  end
-end
-
-defimpl Helmsman.Runnable, for: Helmsman.Spec do
-  alias Helmsman.Utils
-
-  def failed?(spec), do: spec.status == :failed
-  def done?(spec), do: spec.status == :done
-  def required?(spec), do: spec.required
-
-  def fail(spec) do
-    %{spec | status: :failed}
-  end
-
-  def done(spec) do
-    %{spec | status: :done}
+    Utils.select_regex_keys(inputs, @output_reg)
   end
 
   def run(spec, input) do
@@ -122,11 +85,11 @@ defimpl Helmsman.Runnable, for: Helmsman.Spec do
       result =
         spec.input
         |> Utils.input_joins(input)
-        |> spec.processor.run
+        |> get_processor(spec).run
         |> Utils.remap_keys(spec.output)
-      {done(spec), result}
+      {Runnable.done(spec), result}
     catch
-      any -> {fail(spec), %{error: any}}
+      any -> {Runnable.fail(spec), %{error: any}}
     end
   end
 end
