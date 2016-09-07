@@ -59,8 +59,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
   describe "Given straight Pipeline" do
     setup [:one_to_one_spec, :failing_one_to_one_spec]
 
-    test "Runner.run/1 executes processors, passing arguments around", context do
-
+    setup(context) do
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       second_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "b") |> Pipeable.put_output(:out1, "c")
       third_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "d")
@@ -71,7 +70,11 @@ defmodule Helmsman.Pipeline.RunnerTest do
         third_spec
       ]
 
-      straight_pipeline = Pipeline.to_pipeline(specs)
+      {:ok, Map.put(context, :specs, specs)}
+    end
+
+    test "Runner.run/1 executes processors, passing arguments around", context do
+      straight_pipeline = Pipeline.to_pipeline(context.specs)
 
       assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
       assert_received {:processor_called, OneToOne, %{in1: "f"}}
@@ -82,17 +85,12 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
     test "Runner.run/1 executes processors, returns error if requred spec fails", context do
 
-      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
-      second_spec = context.failing_one_to_one_spec |> Pipeable.put_input(:in1, "b") |> Pipeable.put_output(:out1, "c")
-      third_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "d")
-
-      required_spec = second_spec |> Pipeable.required
-
-      specs = [
-        first_spec,
-        required_spec,
-        third_spec
-      ]
+      required_spec =
+        context.failing_one_to_one_spec
+        |> Pipeable.put_input(:in1, "b")
+        |> Pipeable.put_output(:out1, "c")
+        |> Pipeable.required
+      specs = context.specs |> List.replace_at(1, required_spec) 
 
       straight_pipeline = Pipeline.to_pipeline(specs)
 
@@ -101,8 +99,26 @@ defmodule Helmsman.Pipeline.RunnerTest do
       assert_received {:processor_called, FailingOneToOne, %{in1: "fa"}}
       refute_received {:processor_called, OneToOne, _a}
 
-      #TODO: Change to actual
       assert result[:error] == "Important error"
+    end
+
+    test "Runner.run/1 executes processors, returns result if not required spec fails", context do
+
+      failing_spec =
+        context.failing_one_to_one_spec
+        |> Pipeable.put_input(:in1, "b")
+        |> Pipeable.put_output(:out1, "c")
+      specs = context.specs |> List.replace_at(1, failing_spec) 
+
+      straight_pipeline = Pipeline.to_pipeline(specs)
+
+      assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
+      assert_received {:processor_called, OneToOne, %{in1: "f"}}
+      assert_received {:processor_called, FailingOneToOne, %{in1: "fa"}}
+      refute_received {:processor_called, OneToOne, _a}
+
+      assert result[:error] == "Important error"
+      assert result["b"] == "fa"
     end
   end
 
@@ -146,7 +162,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
   end
 
   describe "Given variable output pipeline" do
-    setup [:one_to_one_spec, :one_to_variable_spec, :variable_to_one_spec, :map_reducer_spec]
+    setup [:one_to_one_spec, :one_to_variable_spec, :variable_to_one_spec, :map_reducer_spec, :failing_one_to_one_spec]
 
     test "Runner.run/1 can reduce outputs of variable specs with input variable spec", context do
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
@@ -172,6 +188,53 @@ defmodule Helmsman.Pipeline.RunnerTest do
       assert_received {:processor_called, VariableToOne, %{inN: [%{in1: "fav"}, %{in1: "fav"}, %{in1: "fav"}]}}
 
       assert result["d"] == "favfavfavr"
+    end
+
+    test "Runner.run/1 can fails if required spec fails in map", context do
+      first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
+
+      variable_spec =
+        context.one_to_variable_spec
+        |> Pipeable.put_input(:in1, "b")
+        |> Pipeable.put_output(:outN, {"c", %{out1: "e"}})
+
+      map_one_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "e") |> Pipeable.put_output(:out1, "g")
+      failing_spec =
+        context.failing_one_to_one_spec
+        |> Pipeable.required
+        |> Pipeable.put_input(:in1, "g")
+        |> Pipeable.put_output(:out1, "output")
+
+      map_pipeline = Pipeline.to_pipeline([map_one_spec, failing_spec])
+
+      map_proc =
+        context.map_reducer_spec
+        |> Pipeable.required
+        |> Pipeable.put_input(:inN, "c")
+        |> Pipeable.put_output(:outN, "d")
+        |> Helmsman.Reducers.Mapping.put_pipeline(map_pipeline)
+
+      specs = [
+        first_spec,
+        variable_spec,
+        map_proc
+      ]
+
+      variable_failing_pipeline = Pipeline.to_pipeline(specs)
+
+      #TODO: Error should somehow emerge from result
+      #
+      assert {:error, _result} = Runner.run(variable_failing_pipeline, %{"a" => "f"})
+
+      assert_received {:processor_called, OneToOne, %{in1: "f"}}
+      assert_received {:processor_called, OneToVariable, %{in1: "fa"}}
+      assert_received {:processor_called, OneToOne, %{in1: "fav"}}
+      assert_received {:processor_called, OneToOne, %{in1: "fav"}}
+      assert_received {:processor_called, OneToOne, %{in1: "fav"}}
+      assert_received {:processor_called, FailingOneToOne, %{in1: "fava"}}
+      assert_received {:processor_called, FailingOneToOne, %{in1: "fava"}}
+      assert_received {:processor_called, FailingOneToOne, %{in1: "fava"}}
+
     end
 
     test "Runner.run/1 can map outputs of variable specs", context do

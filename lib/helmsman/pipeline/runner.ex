@@ -6,16 +6,15 @@ defmodule Helmsman.Pipeline.Runner do
   Directs inputs and outputs between processors, using rules from pipeline.
   """
 
-  alias Helmsman.{Pipeline, Runnable}
+  alias Helmsman.Pipeline
 
   @spec run(Pipeline.t, map) :: {:ok, any} | {:error, String.t}
   def run(pipeline, input) do
-    case Pipeline.status(pipeline) do
-      :failed -> {:error, input}
-      :done -> {:ok, input}
-      other when other in [:prepared, :running] ->
-        {new_pipeline, new_input} = Runnable.run(pipeline, input)
-        run(new_pipeline, new_input)
+    {executed_pipeline, result} = Pipeline.run(pipeline, input)
+
+    case Pipeline.status(executed_pipeline) do
+      :failed -> {:error, result}
+      :done -> {:ok, result}
     end
   end
 end

@@ -68,7 +68,7 @@ defmodule Helmsman.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(FailingOneToOne)
-      |> Pipeable.put_input(:inN, "a")
+      |> Pipeable.put_input(:in1, "a")
       |> Pipeable.put_output(:out1, "b")
 
     {:ok, Map.put(context, :failing_one_to_one_spec, spec)}

@@ -66,29 +66,40 @@ defmodule Helmsman.Pipeline do
     update_in pipeline.specs, &(&1 -- specs)
   end
 
+  @spec run(t, map) :: {t, map}
   def run(pipeline, input) do
+    case status(pipeline) do
+      :failed -> {pipeline, input}
+      :done -> {pipeline, input}
+      other when other in [:prepared, :running] ->
+        {new_pipeline, new_input} = do_run(pipeline, input)
+        run(new_pipeline, new_input)
+    end
+  end
 
+  def do_run(pipeline, input) do
     current_pipeline =
       for_inputs(pipeline, Map.keys(input))
       |> update_status
 
-      if status(current_pipeline) in [:running, :prepared] do
-        {new_specs, outputs} =
-          current_pipeline
-          |> prepared_specs
-          |> Enum.map(&Runnable.run(&1, input))
-          |> Utils.transpose_tuples
+    if status(current_pipeline) in [:running, :prepared] do
+      {new_specs, outputs} =
+        current_pipeline
+        |> prepared_specs
+        |> Enum.map(&Runnable.run(&1, input))
+        |> Utils.transpose_tuples
 
 
-        result = Enum.reduce(outputs, input, &Map.merge/2)
-        new_pipeline = pipeline
-                        |> remove_specs(current_pipeline |> prepared_specs)
-                        |> append_specs(new_specs)
-                        |> update_status
+      result = Enum.reduce(outputs, input, &Map.merge/2)
+      new_pipeline =
+        pipeline
+        |> remove_specs(current_pipeline |> prepared_specs)
+        |> append_specs(new_specs)
+        |> update_status
 
-        {new_pipeline, result}
-      else
-        {current_pipeline, input}
-      end
+      {new_pipeline, result}
+    else
+      {current_pipeline, input}
+    end
   end
 end
