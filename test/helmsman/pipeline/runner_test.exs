@@ -222,6 +222,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
       variable_failing_pipeline = Pipeline.to_pipeline(specs)
 
+  alias Helmsman.Pipeline.Runner
       #TODO: Error should somehow emerge from result
       #
       assert {:error, _result} = Runner.run(variable_failing_pipeline, %{"a" => "f"})

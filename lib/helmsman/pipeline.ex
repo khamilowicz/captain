@@ -16,7 +16,6 @@ defmodule Helmsman.Pipeline do
     status: :prepared
   ]
 
-
   @spec to_pipeline([Spec.t]) :: t
   def to_pipeline(specs) when is_list(specs) do
     %__MODULE__{specs: specs}
@@ -77,25 +76,33 @@ defmodule Helmsman.Pipeline do
     end
   end
 
+  def run_specs(pipeline, input) do
+    pipeline
+    |> prepared_specs
+    |> Enum.map(&Runnable.run(&1, input))
+    |> Utils.transpose_tuples
+  end
+
+  def update(pipeline, options) do
+    new_specs = Keyword.get(options, :append, [])
+    remove_specs = Keyword.get(options, :remove, [])
+
+    pipeline
+    |> remove_specs(remove_specs)
+    |> append_specs(new_specs)
+    |> update_status
+  end
+
   def do_run(pipeline, input) do
     current_pipeline =
       for_inputs(pipeline, Map.keys(input))
       |> update_status
 
     if status(current_pipeline) in [:running, :prepared] do
-      {new_specs, outputs} =
-        current_pipeline
-        |> prepared_specs
-        |> Enum.map(&Runnable.run(&1, input))
-        |> Utils.transpose_tuples
-
+      {new_specs, outputs} = run_specs(current_pipeline, input)
 
       result = Enum.reduce(outputs, input, &Map.merge/2)
-      new_pipeline =
-        pipeline
-        |> remove_specs(current_pipeline |> prepared_specs)
-        |> append_specs(new_specs)
-        |> update_status
+      new_pipeline = update(pipeline, append: new_specs, remove: prepared_specs(current_pipeline))
 
       {new_pipeline, result}
     else

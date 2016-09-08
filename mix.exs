@@ -18,7 +18,7 @@ defmodule Helmsman.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :poison]]
   end
 
 
@@ -33,7 +33,8 @@ defmodule Helmsman.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:dialyxir, "~> 0.3.5"}
+      {:dialyxir, "~> 0.3.5"},
+      {:poison, "~> 2.2.0"},
     ]
   end
 end
