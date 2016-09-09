@@ -28,8 +28,8 @@ defmodule Helmsman.Spec do
     output: %{atom => String.t},
   }
 
-  @input_reg ~r{^in\d\d?N?$}
-  @output_reg ~r{^out\d\d?N?$}
+  @input_reg ~r{^in(\d\d?|N)$}
+  @output_reg ~r{^out(\d\d?|N)$}
 
   @derive [Helmsman.Pipeable, Helmsman.Runnable]
 
@@ -63,21 +63,35 @@ defmodule Helmsman.Spec do
   def get_processor(%{processor: processor}), do: processor
 
   @doc """
-  iex> Helmsman.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3})
-  %{in1: 1}
+  iex> Helmsman.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3, "inN" => %{"key" => "hello", "mappings" => %{"in1" => "a"}}})
+  %{in1: 1, inN: %{key: "hello", mappings: %{in1: "a"}}}
   """
   @spec to_inputs(map) :: map
   def to_inputs(inputs) do
     Utils.select_regex_keys(inputs, @input_reg)
+    |> Enum.map(fn
+        {:inN, val} -> {:inN, to_n_mapping(val, &to_inputs/1)}
+        other -> other
+    end)
+    |> Enum.into(%{})
   end
 
   @doc """
-  iex> Helmsman.Spec.to_outputs(%{"out1234" => 1, "out10" => 2, "malice" => 3})
-  %{out10: 2}
+  iex> Helmsman.Spec.to_outputs(%{"out1234" => 1, "out10" => 2, "malice" => 3, "outN" => %{"key" => "hello", "mappings" => %{"out1" => "a"}}})
+  %{out10: 2, outN: %{key: "hello", mappings: %{out1: "a"}}}
   """
   @spec to_outputs(map) :: map
   def to_outputs(inputs) do
     Utils.select_regex_keys(inputs, @output_reg)
+    |> Enum.map(fn
+        {:outN, val} -> {:outN, to_n_mapping(val, &to_outputs/1)}
+        other -> other
+    end)
+    |> Enum.into(%{})
+  end
+
+  def to_n_mapping(%{"key" => key, "mappings" => mappings}, mapping_parser) do
+    %{key: key, mappings: mapping_parser.(mappings)}
   end
 
   def run(spec, input) do

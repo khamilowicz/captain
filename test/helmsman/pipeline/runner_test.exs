@@ -52,6 +52,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
   doctest Helmsman.Pipeline.Runner
 
   import Helmsman.SpecHelpers
+  import Helmsman.StructureHelpers
 
   alias Helmsman.{Pipeline, Pipeable}
   alias Helmsman.Pipeline.Runner
@@ -168,10 +169,10 @@ defmodule Helmsman.Pipeline.RunnerTest do
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       variable_output_spec = context.one_to_variable_spec
                       |> Pipeable.put_input(:in1, "b")
-                      |> Pipeable.put_output(:outN, {"c", %{out1: "e"}})
+                      |> Pipeable.put_output(:outN, %{key: "c", mappings: %{out1: "e"}})
 
     variable_input_spec = context.variable_to_one_spec
-                          |> Pipeable.put_input(:inN, {"c", %{in1: "e"}})
+                          |> Pipeable.put_input(:inN, %{key: "c", mappings: %{in1: "e"}})
                           |> Pipeable.put_output(:out1, "d")
 
       specs = [
@@ -196,7 +197,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
       variable_spec =
         context.one_to_variable_spec
         |> Pipeable.put_input(:in1, "b")
-        |> Pipeable.put_output(:outN, {"c", %{out1: "e"}})
+        |> Pipeable.put_output(:outN, %{key: "c", mappings: %{out1: "e"}})
 
       map_one_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "e") |> Pipeable.put_output(:out1, "g")
       failing_spec =
@@ -222,7 +223,6 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
       variable_failing_pipeline = Pipeline.to_pipeline(specs)
 
-  alias Helmsman.Pipeline.Runner
       #TODO: Error should somehow emerge from result
       #
       assert {:error, _result} = Runner.run(variable_failing_pipeline, %{"a" => "f"})
@@ -242,7 +242,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       variable_spec = context.one_to_variable_spec
                       |> Pipeable.put_input(:in1, "b")
-                      |> Pipeable.put_output(:outN, {"c", %{out1: "e"}})
+                      |> Pipeable.put_output(:outN, %{key: "c", mappings: %{out1: "e"}})
 
       map_one_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "e") |> Pipeable.put_output(:out1, "output")
       map_pipeline = Pipeline.to_pipeline([map_one_spec])
@@ -269,6 +269,49 @@ defmodule Helmsman.Pipeline.RunnerTest do
 
       assert Enum.map(result["d"], &Map.get(&1, "output")) == ["fava", "fava", "fava"]
     end
+  end
+
+  describe "Given valid Structure" do
+
+    setup [:configure_processors, :valid_json_structure]
+
+    test "Runner.run will run strucutre", context do
+      assert {:ok, structure, io} = Helmsman.decode(context.json_structure)
+
+      assert {:ok, result} = Runner.run(structure, io.input, io.output)
+
+      assert(%{
+        "h" => "http://www.example.orgaalvaahttp://www.example.orgaalvaahttp://www.example.orgaalvaar",
+      } = result)
+
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.org"}}
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orga"}}
+      assert_received {:processor_called, OneToTwo, %{in1:  "http://www.example.orgaa"}}
+      assert_received {:processor_called, OneToVariable, %{in1:  "http://www.example.orgaal"}}
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orgaalv"}}
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orgaalv"}}
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orgaalv"}}
+
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orgaalva"}}
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orgaalva"}}
+      assert_received {:processor_called, OneToOne, %{in1:  "http://www.example.orgaalva"}}
+
+      assert_received {:processor_called, VariableToOne, %{inN: [
+         %{in1: "http://www.example.orgaalvaa"},
+         %{in1: "http://www.example.orgaalvaa"},
+         %{in1: "http://www.example.orgaalvaa"}]}}
+    end
+  end
+
+  def configure_processors(_context) do
+    processors = %{
+      "one.to.one" => OneToOne,
+      "variable.to.one" => VariableToOne,
+      "one.to.two" => OneToTwo,
+      "one.to.variable" => OneToVariable,
+    }
+    Helmsman.ProcessorsHelpers.configure_processors(%{processors: processors})
+    :ok
   end
 end
 

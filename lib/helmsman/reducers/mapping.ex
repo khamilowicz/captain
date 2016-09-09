@@ -1,8 +1,9 @@
 defmodule Helmsman.Reducers.Mapping do
 
   alias Helmsman.{Runnable, Utils}
+  alias Helmsman.Pipeline.Register
 
-  @derive [Helmsman.Pipeable, Helmsman.Runnable, Poison.Decoder]
+  @derive [Helmsman.Pipeable, Helmsman.Runnable]
 
   @input_reg ~r{^inN$}
   @output_reg ~r{^outN$}
@@ -46,6 +47,13 @@ defmodule Helmsman.Reducers.Mapping do
     %{map_spec | pipeline: pipeline}
   end
 
+  def pipeline(spec, input) do
+    cond do
+      is_bitstring(spec.pipeline) -> Register.get(input["_register"], spec.pipeline)
+      true -> spec.pipeline
+    end
+  end
+
   def run(spec, input) do
     pipeline_input =
       spec.input
@@ -54,7 +62,7 @@ defmodule Helmsman.Reducers.Mapping do
 
     #TODO: Use new specs and pipeline to create new pipe
     {new_specs, outputs} = pipeline_input
-              |> Enum.map(&Runnable.run(spec.pipeline, &1))
+              |> Enum.map(&Runnable.run(pipeline(spec, input), &1))
               |> Utils.transpose_tuples
 
     if Enum.any?(new_specs, &Runnable.failed?/1) do
