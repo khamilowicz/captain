@@ -6,21 +6,23 @@ defmodule Mapmaker.Pipeline.Runner do
   Directs inputs and outputs between processors, using rules from pipeline.
   """
 
-  alias Mapmaker.{Pipeline, Structure, Pipeline}
+  alias Mapmaker.{Pipeline, Structure, Runnable}
 
 
-  @spec run(Pipeline.t | Structure.t, map, map) :: {:ok, any} | {:error, String.t}
-  def run(runnable, input, output \\ %{})
-  def run(%Structure{} = structure, input, output) do
+  @spec run(Pipeline.t | Structure.t, map, map, map) :: {:ok, any} | {:error, String.t}
+  def run(runnable, input, output \\ %{}, extra \\ %{})
+
+  def run(%Structure{} = structure, input, output, extra) do
     pipeline_register = Pipeline.Register.from_structure(structure)
     main_pipeline = Pipeline.Register.main(pipeline_register)
 
-    input = Map.put(input, "_register", pipeline_register)
 
-    run(main_pipeline, input, output)
+    extra = Map.put(extra, :register, pipeline_register)
+
+    run(main_pipeline, input, output, extra)
   end
-  def run(%Pipeline{} = pipeline, input, _output) do
-    {executed_pipeline, result} = Pipeline.run(pipeline, input)
+  def run(%Pipeline{} = pipeline, input, _output, extra) do
+    {executed_pipeline, result} = Runnable.run(pipeline, input, extra)
 
     case Pipeline.status(executed_pipeline) do
       :failed -> {:error, result}

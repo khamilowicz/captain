@@ -2,8 +2,8 @@ defprotocol Mapmaker.Runnable do
   @dialyzer {:nowarn_function, __protocol__: 1}
 
   @doc "Returns new runnable with result as map with out* keys"
-  @spec run(Mapmaker.Runnable.t, map) :: {Mapmaker.Runnable.t, map}
-  def run(runnable, input)
+  @spec run(Mapmaker.Runnable.t, map, map) :: {Mapmaker.Runnable.t, map}
+  def run(runnable, input, extra)
 
   @doc "Changes status of runnable to :failed"
   def fail(runnable)
@@ -25,7 +25,7 @@ defimpl Mapmaker.Runnable, for: Any do
   def fail(runnable), do: %{runnable | status: :failed}
   def done(runnable), do: %{runnable | status: :done}
 
-  def run(runnable, input) do
-    runnable.__struct__.run(runnable, input)
+  def run(runnable, input, extra) do
+    runnable.__struct__.run(runnable, input, extra)
   end
 end

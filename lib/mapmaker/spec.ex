@@ -94,12 +94,12 @@ defmodule Mapmaker.Spec do
     %{key: key, mappings: mapping_parser.(mappings)}
   end
 
-  def run(spec, input) do
+  def run(spec, input, extra) do
     try do
       result =
         spec.input
         |> Utils.input_joins(input)
-        |> get_processor(spec).run
+        |> get_processor(spec).run(extra)
         |> Utils.remap_keys(spec.output)
       {Runnable.done(spec), result}
     catch

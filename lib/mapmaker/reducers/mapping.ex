@@ -47,14 +47,14 @@ defmodule Mapmaker.Reducers.Mapping do
     %{map_spec | pipeline: pipeline}
   end
 
-  def pipeline(spec, input) do
+  def pipeline(spec, input, extra) do
     cond do
-      is_bitstring(spec.pipeline) -> Register.get(input["_register"], spec.pipeline)
+      is_bitstring(spec.pipeline) -> Register.get(extra[:register], spec.pipeline)
       true -> spec.pipeline
     end
   end
 
-  def run(spec, input) do
+  def run(spec, input, extra) do
     pipeline_input =
       spec.input
       |> Utils.input_joins(input)
@@ -62,7 +62,7 @@ defmodule Mapmaker.Reducers.Mapping do
 
     #TODO: Use new specs and pipeline to create new pipe
     {new_specs, outputs} = pipeline_input
-              |> Enum.map(&Runnable.run(pipeline(spec, input), &1))
+              |> Enum.map(&Runnable.run(pipeline(spec, input, extra), &1, extra))
               |> Utils.transpose_tuples
 
     if Enum.any?(new_specs, &Runnable.failed?/1) do

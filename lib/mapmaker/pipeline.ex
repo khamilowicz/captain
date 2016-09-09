@@ -65,21 +65,21 @@ defmodule Mapmaker.Pipeline do
     update_in pipeline.specs, &(&1 -- specs)
   end
 
-  @spec run(t, map) :: {t, map}
-  def run(pipeline, input) do
+  @spec run(t, map, map) :: {t, map}
+  def run(pipeline, input, extra) do
     case status(pipeline) do
       :failed -> {pipeline, input}
       :done -> {pipeline, input}
       other when other in [:prepared, :running] ->
-        {new_pipeline, new_input} = do_run(pipeline, input)
-        run(new_pipeline, new_input)
+        {new_pipeline, new_input} = do_run(pipeline, input, extra)
+        run(new_pipeline, new_input, extra)
     end
   end
 
-  def run_specs(pipeline, input) do
+  def run_specs(pipeline, input, extra) do
     pipeline
     |> prepared_specs
-    |> Enum.map(&Runnable.run(&1, input))
+    |> Enum.map(&Runnable.run(&1, input, extra))
     |> Utils.transpose_tuples
   end
 
@@ -93,13 +93,13 @@ defmodule Mapmaker.Pipeline do
     |> update_status
   end
 
-  def do_run(pipeline, input) do
+  def do_run(pipeline, input, extra) do
     current_pipeline =
       for_inputs(pipeline, Map.keys(input))
       |> update_status
 
     if status(current_pipeline) in [:running, :prepared] do
-      {new_specs, outputs} = run_specs(current_pipeline, input)
+      {new_specs, outputs} = run_specs(current_pipeline, input, extra)
 
       result = Enum.reduce(outputs, input, &Map.merge/2)
       new_pipeline = update(pipeline, append: new_specs, remove: prepared_specs(current_pipeline))
