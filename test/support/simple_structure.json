@@ -1,0 +1,19 @@
+{
+  "inputs": [{
+    "value": "http://www.example.org",
+    "name": "file",
+    "preproc": "download"
+  }],
+  "outputs": [{
+    "name": "duration",
+    "postproc": "to_json"
+  }],
+  "pipelines": [
+    {
+      "name": "main",
+      "structure": [
+        {"processor": "duration", "input": {"in1": "file"}, "output": {"out1": "duration"}, "required": true}
+      ]
+    }
+  ]
+}

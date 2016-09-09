@@ -19,7 +19,7 @@ defmodule Helmsman.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [
-      mod: {Helmsman, []},
+      mod: {Helmsman.App, []},
       applications: [
         :logger,
         :dbux,
@@ -41,6 +41,9 @@ defmodule Helmsman.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:dbux, "~> 1.0"}]
+    [
+      {:dbux, "~> 1.0"},
+      {:mapmaker, in_umbrella: true}
+   ]
   end
 end

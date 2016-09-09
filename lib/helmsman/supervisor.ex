@@ -11,7 +11,6 @@ defmodule Helmsman.Supervisor do
     ]
 
     options = [strategy: :one_for_one]
-
     supervise(children, options)
   end
 end
