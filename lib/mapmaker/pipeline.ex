@@ -1,6 +1,6 @@
-defmodule Helmsman.Pipeline do
+defmodule Mapmaker.Pipeline do
 
-  alias Helmsman.{Spec, Pipeable, Runnable, Utils}
+  alias Mapmaker.{Spec, Pipeable, Runnable, Utils}
 
   @type status :: :prepared | :running | :done | :failed
 
@@ -9,7 +9,7 @@ defmodule Helmsman.Pipeline do
     status: status
   }
 
-  @derive [Helmsman.Runnable]
+  @derive [Mapmaker.Runnable]
 
   defstruct [
     specs: [],

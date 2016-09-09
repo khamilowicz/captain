@@ -1,11 +1,11 @@
-defmodule Helmsman.PipelineTest do
+defmodule Mapmaker.PipelineTest do
   use ExUnit.Case, async: true
 
-  import Helmsman.SpecHelpers
+  import Mapmaker.SpecHelpers
 
-  alias Helmsman.{Pipeline, Pipeable}
+  alias Mapmaker.{Pipeline, Pipeable}
 
-  doctest Helmsman.Pipeline
+  doctest Mapmaker.Pipeline
 
   describe "Given valid Spec pipeline" do
     setup [:one_to_one_spec, :one_to_two_spec, :two_to_one_spec, :prepare_pipeline_spec]

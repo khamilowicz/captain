@@ -1,7 +1,7 @@
-defmodule Helmsman.Structure do
+defmodule Mapmaker.Structure do
   @type t :: %__MODULE__{}
   defstruct [:inputs, :outputs, :pipelines]
-  alias Helmsman.Pipeline.Register
+  alias Mapmaker.Pipeline.Register
 
   def main_pipeline(structure) do
     Register.get(structure, "main")
@@ -12,7 +12,7 @@ defmodule Helmsman.Structure do
   end
 end
 
-defimpl Poison.Decoder, for: Helmsman.Structure.IO do
+defimpl Poison.Decoder, for: Mapmaker.Structure.IO do
   def decode(value, _options) do
     input =
       value.inputs

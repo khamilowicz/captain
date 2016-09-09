@@ -1,8 +1,8 @@
-defprotocol Helmsman.Runnable do
+defprotocol Mapmaker.Runnable do
   @dialyzer {:nowarn_function, __protocol__: 1}
 
   @doc "Returns new runnable with result as map with out* keys"
-  @spec run(Helmsman.Runnable.t, map) :: {Helmsman.Runnable.t, map}
+  @spec run(Mapmaker.Runnable.t, map) :: {Mapmaker.Runnable.t, map}
   def run(runnable, input)
 
   @doc "Changes status of runnable to :failed"
@@ -16,7 +16,7 @@ defprotocol Helmsman.Runnable do
   def prepared?(runnable)
 end
 
-defimpl Helmsman.Runnable, for: Any do
+defimpl Mapmaker.Runnable, for: Any do
   def prepared?(runnable), do: runnable.status == :prepared
   def failed?(runnable), do:   runnable.status == :failed
   def done?(runnable), do:     runnable.status == :done

@@ -1,12 +1,12 @@
-defmodule Helmsman do
+defmodule Mapmaker do
   @moduledoc """
   Processor composer.
 
-  Helmsman converts processor pipeline specification into pipeline.
+  Mapmaker converts processor pipeline specification into pipeline.
   """
 
-  alias Helmsman.{Pipeline, Structure, Spec}
-  alias Helmsman.Pipeline.Register.Entry
+  alias Mapmaker.{Pipeline, Structure, Spec}
+  alias Mapmaker.Pipeline.Register.Entry
 
   def decode(json) do
     case Poison.decode(json, as: %Structure{pipelines: [%Entry{pipeline: %Pipeline{specs: [%Spec{}]}}]}) do

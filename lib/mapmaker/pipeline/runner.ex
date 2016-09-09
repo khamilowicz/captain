@@ -1,4 +1,4 @@
-defmodule Helmsman.Pipeline.Runner do
+defmodule Mapmaker.Pipeline.Runner do
   @moduledoc """
 
   Executes Pipeline.
@@ -6,7 +6,7 @@ defmodule Helmsman.Pipeline.Runner do
   Directs inputs and outputs between processors, using rules from pipeline.
   """
 
-  alias Helmsman.{Pipeline, Structure, Pipeline}
+  alias Mapmaker.{Pipeline, Structure, Pipeline}
 
 
   @spec run(Pipeline.t | Structure.t, map, map) :: {:ok, any} | {:error, String.t}

@@ -1,10 +1,10 @@
-defmodule Helmsman.Utils do
+defmodule Mapmaker.Utils do
 
   @doc """
-    iex> Helmsman.Utils.input_joins(%{in1: "a", in2: "b"}, %{"b" => "c", "a" => "d", "h" => "f"})
+    iex> Mapmaker.Utils.input_joins(%{in1: "a", in2: "b"}, %{"b" => "c", "a" => "d", "h" => "f"})
     %{in1: "d", in2: "c"}
 
-    iex> Helmsman.Utils.input_joins(%{inN: %{key: "a", mappings: %{in1: "g", in2: "i"}}}, %{"b" => "c", "a" => [%{"g" => "hello", "i" => "hi"}], "h" => "f"})
+    iex> Mapmaker.Utils.input_joins(%{inN: %{key: "a", mappings: %{in1: "g", in2: "i"}}}, %{"b" => "c", "a" => [%{"g" => "hello", "i" => "hi"}], "h" => "f"})
     %{inN: [%{in1: "hello", in2: "hi"}]}
   """
   @spec input_joins(map, map) :: map
@@ -19,7 +19,7 @@ defmodule Helmsman.Utils do
   end
 
   @doc """
-  iex> Helmsman.Utils.remap_keys(%{in1: "c", in2: "d", in3: "f"}, %{in1: "a", in2: "b"})
+  iex> Mapmaker.Utils.remap_keys(%{in1: "c", in2: "d", in3: "f"}, %{in1: "a", in2: "b"})
   %{"a" => "c", "b" => "d"}
   """
   @spec remap_keys(map, map) :: map
@@ -34,7 +34,7 @@ defmodule Helmsman.Utils do
   end
 
   @doc """
-  iex> Helmsman.Utils.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
+  iex> Mapmaker.Utils.select_regex_keys(%{"abc" => 1, "bcd" => 2, "cde" => 3}, ~r{bc})
   %{abc: 1, bcd: 2}
   """
   def select_regex_keys(nil, _regex), do: %{}
@@ -50,9 +50,9 @@ defmodule Helmsman.Utils do
   end
 
   @doc """
-    iex> Helmsman.Utils.is_sublist?([1,2,3], [1,2])
+    iex> Mapmaker.Utils.is_sublist?([1,2,3], [1,2])
     true
-    iex> Helmsman.Utils.is_sublist?([1,2,3], [1,2,4])
+    iex> Mapmaker.Utils.is_sublist?([1,2,3], [1,2,4])
     false
   """
   @spec is_sublist?([], []) :: boolean
@@ -63,7 +63,7 @@ defmodule Helmsman.Utils do
   @doc """
   Changes list of tuples into tuple of lists
 
-    iex> Helmsman.Utils.transpose_tuples([{1, "a"}, {2, "b"}, {3, "c"}])
+    iex> Mapmaker.Utils.transpose_tuples([{1, "a"}, {2, "b"}, {3, "c"}])
     {[1,2,3], ["a", "b", "c"]}
   """
   def transpose_tuples(tuples) when is_list(tuples) do

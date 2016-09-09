@@ -1,7 +1,7 @@
-defmodule Helmsman.SpecHelpers do
+defmodule Mapmaker.SpecHelpers do
 
-  alias Helmsman.{Spec, Pipeable}
-  alias Helmsman.Reducers.Mapping
+  alias Mapmaker.{Spec, Pipeable}
+  alias Mapmaker.Reducers.Mapping
 
   def one_to_one_raw_spec(context) do
     raw_spec = %{

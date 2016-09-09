@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure for your application as:
 #
-#     config :helmsman, key: :value
+#     config :mapmaker, key: :value
 #
 # And access this configuration in your application as:
 #
-#     Application.get_env(:helmsman, :key)
+#     Application.get_env(:mapmaker, :key)
 #
 # Or configure a 3rd-party app:
 #

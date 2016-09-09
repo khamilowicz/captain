@@ -1,11 +1,11 @@
-defmodule HelmsmanTest do
+defmodule MapmakerTest do
   use ExUnit.Case, async: true
-  doctest Helmsman
+  doctest Mapmaker
 
-  import Helmsman.ProcessorsHelpers
-  import Helmsman.StructureHelpers
+  import Mapmaker.ProcessorsHelpers
+  import Mapmaker.StructureHelpers
 
-  alias Helmsman.Structure
+  alias Mapmaker.Structure
   setup [
     :init_processors,
     :add_one_to_one_processor,
@@ -18,10 +18,10 @@ defmodule HelmsmanTest do
   describe "Given valid structure json" do
     setup [:valid_json_structure]
 
-    test "Helmsman.parse converts JSON processors structure into pipeline", context do
+    test "Mapmaker.parse converts JSON processors structure into pipeline", context do
       Poison.decode!(context.json_structure) # Check if valid JSON
       #TODO: Test it better
-      assert {:ok, %Structure{} = _pipeline, %{input: %{"a" => "http://www.example.org"}}} = Helmsman.decode(context.json_structure)
+      assert {:ok, %Structure{} = _pipeline, %{input: %{"a" => "http://www.example.org"}}} = Mapmaker.decode(context.json_structure)
     end
 
   end

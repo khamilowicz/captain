@@ -1,4 +1,4 @@
-defmodule Helmsman.StructureHelpers do
+defmodule Mapmaker.StructureHelpers do
 
   def valid_json_structure(context) do
       pipeline_structure = """

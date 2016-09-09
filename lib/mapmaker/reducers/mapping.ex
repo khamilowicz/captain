@@ -1,9 +1,9 @@
-defmodule Helmsman.Reducers.Mapping do
+defmodule Mapmaker.Reducers.Mapping do
 
-  alias Helmsman.{Runnable, Utils}
-  alias Helmsman.Pipeline.Register
+  alias Mapmaker.{Runnable, Utils}
+  alias Mapmaker.Pipeline.Register
 
-  @derive [Helmsman.Pipeable, Helmsman.Runnable]
+  @derive [Mapmaker.Pipeable, Mapmaker.Runnable]
 
   @input_reg ~r{^inN$}
   @output_reg ~r{^outN$}

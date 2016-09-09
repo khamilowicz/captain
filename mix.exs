@@ -1,10 +1,14 @@
-defmodule Helmsman.Mixfile do
+defmodule Mapmaker.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :helmsman,
+    [app: :mapmaker,
      version: "0.1.0",
      elixir: "~> 1.3",
+     build_path: "../../_build",
+     config_path: "../../config/config.exs",
+     deps_path: "../../deps",
+     lockfile: "../../mix.lock",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      elixirc_paths: elixirc_paths(Mix.env),

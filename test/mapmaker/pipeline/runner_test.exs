@@ -46,16 +46,16 @@ defmodule VariableToOne do
   end
 end
 
-defmodule Helmsman.Pipeline.RunnerTest do
+defmodule Mapmaker.Pipeline.RunnerTest do
   use ExUnit.Case, async: true
 
-  doctest Helmsman.Pipeline.Runner
+  doctest Mapmaker.Pipeline.Runner
 
-  import Helmsman.SpecHelpers
-  import Helmsman.StructureHelpers
+  import Mapmaker.SpecHelpers
+  import Mapmaker.StructureHelpers
 
-  alias Helmsman.{Pipeline, Pipeable}
-  alias Helmsman.Pipeline.Runner
+  alias Mapmaker.{Pipeline, Pipeable}
+  alias Mapmaker.Pipeline.Runner
 
   describe "Given straight Pipeline" do
     setup [:one_to_one_spec, :failing_one_to_one_spec]
@@ -213,7 +213,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
         |> Pipeable.required
         |> Pipeable.put_input(:inN, "c")
         |> Pipeable.put_output(:outN, "d")
-        |> Helmsman.Reducers.Mapping.put_pipeline(map_pipeline)
+        |> Mapmaker.Reducers.Mapping.put_pipeline(map_pipeline)
 
       specs = [
         first_spec,
@@ -250,7 +250,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
       map_proc = context.map_reducer_spec
                   |> Pipeable.put_input(:inN, "c")
                   |> Pipeable.put_output(:outN, "d")
-                  |> Helmsman.Reducers.Mapping.put_pipeline(map_pipeline)
+                  |> Mapmaker.Reducers.Mapping.put_pipeline(map_pipeline)
 
       specs = [
         first_spec,
@@ -276,7 +276,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
     setup [:configure_processors, :valid_json_structure]
 
     test "Runner.run will run strucutre", context do
-      assert {:ok, structure, io} = Helmsman.decode(context.json_structure)
+      assert {:ok, structure, io} = Mapmaker.decode(context.json_structure)
 
       assert {:ok, result} = Runner.run(structure, io.input, io.output)
 
@@ -310,7 +310,7 @@ defmodule Helmsman.Pipeline.RunnerTest do
       "one.to.two" => OneToTwo,
       "one.to.variable" => OneToVariable,
     }
-    Helmsman.ProcessorsHelpers.configure_processors(%{processors: processors})
+    Mapmaker.ProcessorsHelpers.configure_processors(%{processors: processors})
     :ok
   end
 end

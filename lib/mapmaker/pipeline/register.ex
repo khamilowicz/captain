@@ -1,7 +1,7 @@
-defmodule Helmsman.Pipeline.Register do
+defmodule Mapmaker.Pipeline.Register do
   defstruct [:pipelines]
 
-  alias Helmsman.Pipeline.Register.Entry
+  alias Mapmaker.Pipeline.Register.Entry
 
   def from_structure(%{pipelines: pipelines}) when is_list(pipelines) do
     map_pipelines =
@@ -24,24 +24,27 @@ defmodule Helmsman.Pipeline.Register do
   end
 end
 
-defmodule Helmsman.Pipeline.Register.Entry do
+defmodule Mapmaker.Pipeline.Register.Entry do
   defstruct [:name, :pipeline, :structure]
 
   def pipeline(entry), do: entry.pipeline
 end
 
-defimpl Poison.Decoder, for: Helmsman.Pipeline.Register.Entry do
-
-  alias Helmsman.Reducers.Mapping
+defimpl Poison.Decoder, for: Mapmaker.Pipeline.Register.Entry do
+  alias Mapmaker.Reducers.Mapping
+  def processor_register do
+    Application.get_env(Mapmaker, :processors)
+  end
   def decode(in_pipeline, _options) do
     specs = in_pipeline.structure |> Enum.map(&to_specs/1)
-    pipeline = Helmsman.Pipeline.to_pipeline(specs)
+    pipeline = Mapmaker.Pipeline.to_pipeline(specs)
     %{in_pipeline | pipeline: pipeline, structure: nil}
   end
 
   def to_specs(%{"processor" => "mapper"} = raw_spec) do
     Mapping.to_spec(raw_spec)
   end
-  def to_specs(raw_spec), do: Helmsman.Spec.to_spec(raw_spec)
+  def to_specs(raw_spec), do: Mapmaker.Spec.to_spec(raw_spec, processor_register)
 end
+
 
