@@ -1,0 +1,4 @@
+%{"connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], []},
+  "dbux": {:hex, :dbux, "1.0.3", "2b0b01721606e9fc32d1dc38e6cb5bbef50b9241afedc6418a1a67939aa16f35", [:mix], [{:connection, "~> 1.0.2", [hex: :connection, optional: false]}]},
+  "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []},
+  "poison": {:hex, :poison, "2.2.0", "4763b69a8a77bd77d26f477d196428b741261a761257ff1cf92753a0d4d24a63", [:mix], []}}
