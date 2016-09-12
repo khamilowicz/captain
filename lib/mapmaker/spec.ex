@@ -18,24 +18,29 @@ defmodule Mapmaker.Spec do
 
   alias Mapmaker.{Utils, Runnable}
 
-  @type status :: :prepared | :failed | :done
+  @type status :: :prepared | :failed | :done | :running
 
   @type t :: %{
     processor: module,
     required: boolean,
     status: status,
+    state: nil | pid,
     input: %{atom => String.t},
     output: %{atom => String.t},
   }
 
   @input_reg ~r{^in(\d\d?|N)$}
   @output_reg ~r{^out(\d\d?|N)$}
+  #TODO: Make it more flexible
+  @task_blocking_time 10
+
 
   @derive [Mapmaker.Pipeable, Mapmaker.Runnable]
 
   defstruct [
     processor: NullProcessor,
     required: false,
+    state: nil,
     status: :prepared,
     input: %{},
     output: %{}
@@ -61,6 +66,9 @@ defmodule Mapmaker.Spec do
 
   @spec get_processor(t) :: module
   def get_processor(%{processor: processor}), do: processor
+
+  @spec put_state(t, pid) :: module
+  def put_state(spec, state), do: %{spec | state: state}
 
   @doc """
   iex> Mapmaker.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3, "inN" => %{"key" => "hello", "mappings" => %{"in1" => "a"}}})
@@ -94,14 +102,34 @@ defmodule Mapmaker.Spec do
     %{key: key, mappings: mapping_parser.(mappings)}
   end
 
+  def handle_processor_output(%Task{} = task) do
+    case Task.yield(task, @task_blocking_time) do
+      nil -> {:running, task}
+      {:ok, result} -> {:ok, result}
+      {:error, result} -> throw(result)
+    end
+  end
+  def handle_processor_output(map), do: {:ok, map}
+
+  def handle_computation_status(computation_status, spec) do
+    case computation_status do
+      {:ok, result} -> {Runnable.done(spec), Utils.remap_keys(result, spec.output)}
+      {:running, state} ->
+        new_spec = spec |> put_state(state) |> Runnable.running
+        {new_spec, %{}}
+    end
+  end
+
+  def run(%{status: :running, state: state} = spec, input, extra) do
+    state |> handle_processor_output |> handle_computation_status(spec)
+  end
   def run(spec, input, extra) do
     try do
-      result =
-        spec.input
-        |> Utils.input_joins(input)
-        |> get_processor(spec).run(extra)
-        |> Utils.remap_keys(spec.output)
-      {Runnable.done(spec), result}
+      spec.input
+      |> Utils.input_joins(input)
+      |> get_processor(spec).run(extra)
+      |> handle_processor_output
+      |> handle_computation_status(spec)
     catch
       any -> {Runnable.fail(spec), %{error: any}}
     end

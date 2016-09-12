@@ -22,6 +22,16 @@ defmodule Mapmaker.SpecHelpers do
     {:ok, Map.put(context, :one_to_one_spec, spec)}
   end
 
+  def async_one_to_one_spec(context) do
+    spec =
+      %Spec{}
+      |> Spec.put_processor(AsyncOneToOne)
+      |> Pipeable.put_input(:in1, "a")
+      |> Pipeable.put_output(:out1, "b")
+
+    {:ok, Map.put(context, :async_one_to_one_spec, spec)}
+  end
+
   def one_to_two_spec(context) do
     spec =
       %Spec{}

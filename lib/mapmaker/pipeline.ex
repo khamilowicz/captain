@@ -40,9 +40,9 @@ defmodule Mapmaker.Pipeline do
     %{pipeline | specs: pipeline.specs ++ specs}
   end
 
-  @spec prepared_specs(t) :: [Spec.t]
-  def prepared_specs(pipeline) do
-    pipeline.specs |> Enum.filter(&Runnable.prepared?/1)
+  @spec prepared_and_running_specs(t) :: [Spec.t]
+  def prepared_and_running_specs(pipeline) do
+    pipeline.specs |> Enum.filter(&(Runnable.prepared?(&1) || Runnable.running?(&1)))
   end
 
   @spec update_status(t) :: t
@@ -76,9 +76,8 @@ defmodule Mapmaker.Pipeline do
     end
   end
 
-  def run_specs(pipeline, input, extra) do
-    pipeline
-    |> prepared_specs
+  def run_specs(selected_specs, input, extra) do
+    selected_specs
     |> Enum.map(&Runnable.run(&1, input, extra))
     |> Utils.transpose_tuples
   end
@@ -99,10 +98,12 @@ defmodule Mapmaker.Pipeline do
       |> update_status
 
     if status(current_pipeline) in [:running, :prepared] do
-      {new_specs, outputs} = run_specs(current_pipeline, input, extra)
+      selected_specs = prepared_and_running_specs(current_pipeline)
+
+      {new_specs, outputs} = run_specs(selected_specs, input, extra)
 
       result = Enum.reduce(outputs, input, &Map.merge/2)
-      new_pipeline = update(pipeline, append: new_specs, remove: prepared_specs(current_pipeline))
+      new_pipeline = update(pipeline, append: new_specs, remove: selected_specs)
 
       {new_pipeline, result}
     else

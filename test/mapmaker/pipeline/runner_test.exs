@@ -6,6 +6,19 @@ defmodule OneToOne do
   end
 end
 
+defmodule AsyncOneToOne do
+
+  def run(%{in1: in1} = input, _extra) do
+    this = self
+    Task.async(fn ->
+      time = 20 + :rand.uniform(50)
+      Process.sleep(time)
+      send this, {:processor_called, __MODULE__, input}
+      %{out1: in1 <> "a"}
+    end)
+  end
+end
+
 defmodule FailingOneToOne do
 
   def run(%{in1: in1} = input, _extra) do
@@ -58,7 +71,21 @@ defmodule Mapmaker.Pipeline.RunnerTest do
   alias Mapmaker.Pipeline.Runner
 
   describe "Given straight Pipeline" do
-    setup [:one_to_one_spec, :failing_one_to_one_spec]
+    setup [:one_to_one_spec, :async_one_to_one_spec, :failing_one_to_one_spec]
+
+    setup(context) do
+      first_spec  = context.async_one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
+      second_spec = context.async_one_to_one_spec |> Pipeable.put_input(:in1, "b") |> Pipeable.put_output(:out1, "c")
+      third_spec  = context.async_one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "d")
+
+      specs = [
+        first_spec,
+        second_spec,
+        third_spec
+      ]
+
+      {:ok, Map.put(context, :async_specs, specs)}
+    end
 
     setup(context) do
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
@@ -84,6 +111,16 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       assert result["d"] == "faaa"
     end
 
+    test "Runner.run/1 executes asynchronous processors, passing arguments around", context do
+      straight_pipeline = Pipeline.to_pipeline(context.async_specs)
+
+      assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
+      assert_receive {:processor_called, AsyncOneToOne, %{in1: "f"}}
+      assert_receive {:processor_called, AsyncOneToOne, %{in1: "fa"}}
+      assert_receive {:processor_called, AsyncOneToOne, %{in1: "faa"}}
+      assert result["d"] == "faaa"
+    end
+
     test "Runner.run/1 executes processors, returns error if requred spec fails", context do
 
       required_spec =
@@ -91,7 +128,7 @@ defmodule Mapmaker.Pipeline.RunnerTest do
         |> Pipeable.put_input(:in1, "b")
         |> Pipeable.put_output(:out1, "c")
         |> Pipeable.required
-      specs = context.specs |> List.replace_at(1, required_spec) 
+      specs = context.specs |> List.replace_at(1, required_spec)
 
       straight_pipeline = Pipeline.to_pipeline(specs)
 
@@ -109,7 +146,7 @@ defmodule Mapmaker.Pipeline.RunnerTest do
         context.failing_one_to_one_spec
         |> Pipeable.put_input(:in1, "b")
         |> Pipeable.put_output(:out1, "c")
-      specs = context.specs |> List.replace_at(1, failing_spec) 
+      specs = context.specs |> List.replace_at(1, failing_spec)
 
       straight_pipeline = Pipeline.to_pipeline(specs)
 
@@ -124,41 +161,76 @@ defmodule Mapmaker.Pipeline.RunnerTest do
   end
 
   describe "Given forked Pipeline" do
-    setup [:one_to_one_spec, :one_to_two_spec, :two_to_one_spec]
+    setup [:one_to_one_spec, :one_to_two_spec, :two_to_one_spec, :async_one_to_one_spec]
 
     test "Runner.run/1 executes processors, passing arguments around", context do
 
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       forking_spec = context.one_to_two_spec
-                      |> Pipeable.put_input(:in1, "b")
-                      |> Pipeable.put_output(:out1, "c")
-                      |> Pipeable.put_output(:out2, "d")
+                     |> Pipeable.put_input(:in1, "b")
+                     |> Pipeable.put_output(:out1, "c")
+                     |> Pipeable.put_output(:out2, "d")
 
-    left_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "e")
-    right_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "d") |> Pipeable.put_output(:out1, "f")
+      left_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "e")
+      right_spec = context.one_to_one_spec |> Pipeable.put_input(:in1, "d") |> Pipeable.put_output(:out1, "f")
 
-    converging_spec = context.two_to_one_spec
-                      |> Pipeable.put_input(:in1, "e")
-                      |> Pipeable.put_input(:in2, "f")
-                      |> Pipeable.put_output(:out1, "g")
+      converging_spec = context.two_to_one_spec
+                        |> Pipeable.put_input(:in1, "e")
+                        |> Pipeable.put_input(:in2, "f")
+                        |> Pipeable.put_output(:out1, "g")
 
-    specs = [
-      first_spec,
-      forking_spec,
-      left_spec,
-      right_spec,
-      converging_spec
-    ]
+      specs = [
+        first_spec,
+        forking_spec,
+        left_spec,
+        right_spec,
+        converging_spec
+      ]
 
-    forked_pipeline = Pipeline.to_pipeline(specs)
-    assert {:ok, result} = Runner.run(forked_pipeline, %{"a" => "f"})
+        forked_pipeline = Pipeline.to_pipeline(specs)
+        assert {:ok, result} = Runner.run(forked_pipeline, %{"a" => "f"})
 
-    assert_received {:processor_called, OneToOne, %{in1: "f"}}
-    assert_received {:processor_called, OneToTwo, %{in1: "fa"}}
-    assert_received {:processor_called, OneToOne, %{in1: "fal"}}
-    assert_received {:processor_called, OneToOne, %{in1: "far"}}
-    assert_received {:processor_called, TwoToOne, %{in1: "fala", in2: "fara"}}
-    assert %{"g" => "falafarac"} = result
+        assert_received {:processor_called, OneToOne, %{in1: "f"}}
+        assert_received {:processor_called, OneToTwo, %{in1: "fa"}}
+        assert_received {:processor_called, OneToOne, %{in1: "fal"}}
+        assert_received {:processor_called, OneToOne, %{in1: "far"}}
+        assert_received {:processor_called, TwoToOne, %{in1: "fala", in2: "fara"}}
+        assert %{"g" => "falafarac"} = result
+    end
+
+    test "Runner.run/1 executes async processors, passing arguments around", context do
+
+      first_spec  = context.async_one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
+      forking_spec = context.one_to_two_spec
+                     |> Pipeable.put_input(:in1, "b")
+                     |> Pipeable.put_output(:out1, "c")
+                     |> Pipeable.put_output(:out2, "d")
+
+      left_spec = context.async_one_to_one_spec |> Pipeable.put_input(:in1, "c") |> Pipeable.put_output(:out1, "e")
+      right_spec = context.async_one_to_one_spec |> Pipeable.put_input(:in1, "d") |> Pipeable.put_output(:out1, "f")
+
+      converging_spec = context.two_to_one_spec
+                        |> Pipeable.put_input(:in1, "e")
+                        |> Pipeable.put_input(:in2, "f")
+                        |> Pipeable.put_output(:out1, "g")
+
+      specs = [
+        first_spec,
+        forking_spec,
+        left_spec,
+        right_spec,
+        converging_spec
+      ]
+
+        forked_pipeline = Pipeline.to_pipeline(specs)
+        assert {:ok, result} = Runner.run(forked_pipeline, %{"a" => "f"})
+
+        assert_received {:processor_called, AsyncOneToOne, %{in1: "f"}}
+        assert_received {:processor_called, OneToTwo, %{in1: "fa"}}
+        assert_received {:processor_called, AsyncOneToOne, %{in1: "fal"}}
+        assert_received {:processor_called, AsyncOneToOne, %{in1: "far"}}
+        assert_received {:processor_called, TwoToOne, %{in1: "fala", in2: "fara"}}
+        assert %{"g" => "falafarac"} = result
     end
   end
 
@@ -168,12 +240,12 @@ defmodule Mapmaker.Pipeline.RunnerTest do
     test "Runner.run/1 can reduce outputs of variable specs with input variable spec", context do
       first_spec  = context.one_to_one_spec |> Pipeable.put_input(:in1, "a") |> Pipeable.put_output(:out1, "b")
       variable_output_spec = context.one_to_variable_spec
-                      |> Pipeable.put_input(:in1, "b")
-                      |> Pipeable.put_output(:outN, %{key: "c", mappings: %{out1: "e"}})
+                             |> Pipeable.put_input(:in1, "b")
+                             |> Pipeable.put_output(:outN, %{key: "c", mappings: %{out1: "e"}})
 
-    variable_input_spec = context.variable_to_one_spec
-                          |> Pipeable.put_input(:inN, %{key: "c", mappings: %{in1: "e"}})
-                          |> Pipeable.put_output(:out1, "d")
+      variable_input_spec = context.variable_to_one_spec
+                            |> Pipeable.put_input(:inN, %{key: "c", mappings: %{in1: "e"}})
+                            |> Pipeable.put_output(:out1, "d")
 
       specs = [
         first_spec,

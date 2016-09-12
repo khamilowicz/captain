@@ -9,8 +9,11 @@ defprotocol Mapmaker.Runnable do
   def fail(runnable)
   @doc "Changes status of runnable to :done"
   def done(runnable)
+  @doc "Changes status of runnable to :running"
+  def running(runnable)
 
   def done?(runnable)
+  def running?(runnable)
   def failed?(runnable)
   def required?(runnable)
   def prepared?(runnable)
@@ -20,10 +23,12 @@ defimpl Mapmaker.Runnable, for: Any do
   def prepared?(runnable), do: runnable.status == :prepared
   def failed?(runnable), do:   runnable.status == :failed
   def done?(runnable), do:     runnable.status == :done
+  def running?(runnable), do:     runnable.status == :running
   def required?(runnable), do: runnable.required
 
   def fail(runnable), do: %{runnable | status: :failed}
   def done(runnable), do: %{runnable | status: :done}
+  def running(runnable), do: %{runnable | status: :running}
 
   def run(runnable, input, extra) do
     runnable.__struct__.run(runnable, input, extra)
