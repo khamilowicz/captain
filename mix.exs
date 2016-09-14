@@ -42,8 +42,8 @@ defmodule Helmsman.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:dbux, "~> 1.0"},
-      {:mapmaker, in_umbrella: true}
+      {:dbux, git: "https://github.com/khamilowicz/dbux"},
+      {:mapmaker, in_umbrella: true},
    ]
   end
 end

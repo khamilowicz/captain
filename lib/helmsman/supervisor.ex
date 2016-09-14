@@ -7,7 +7,9 @@ defmodule Helmsman.Supervisor do
 
   def init(:ok) do
     import Supervisor.Spec, warn: false
+
     children = [
+      supervisor(Helmsman.Connection.Supervisor, []),
     ]
 
     options = [strategy: :one_for_one]

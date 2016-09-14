@@ -2,34 +2,24 @@ defmodule Helmsman do
 
   defstruct [:structure, :io, :runner]
 
-  def run(helmsman) do
-    options = default_options
-    {:ok, connection} = Helmsman.Connection.start_link(options)
-    Helmsman.Connection.run(helmsman.runner,
-                            :run,
-                            [helmsman.structure,
-                             helmsman.io.input,
-                             helmsman.io.output,
-                             %{connection: connection}
-                           ])
+  def run(helmsman, extra \\ %{}) do
+    Task.async(fn ->
+      {helmsman.runner.run(helmsman.structure, helmsman.io.input, helmsman.io.output, extra), helmsman}
+    end)
   end
 
-  def default_options do
-    [
-      hostname:     "hostname",
-      identifier:   "org.example.dbux.MyApp",
-      match:        "org.example.dbux.OtherIface",
-      request_name: "org.example.dbux.MyApp"
-    ]
-  end
-
-  def result(connection) do
-    Helmsman.Connection.result(connection)
+  def result(pid) do
+    case Task.yield(pid) do
+      {:error, reason} -> throw(reason)
+      {:ok, {{:ok, result}, helmsman}} ->
+        #TODO: Add postprocessing to output
+        {:ok, %{result: Map.take(result, Map.keys(helmsman.io.output))}}
+    end
   end
 
   def read([file: path]) do
     with {:ok, json} <- File.read(path),
-    {:ok, structure, io} <- Mapmaker.decode(json)
+         {:ok, structure, io} <- Mapmaker.decode(json)
     do
       {:ok, %__MODULE__{structure: structure, io: io, runner: Mapmaker}}
     else

@@ -1,6 +1,6 @@
 {
   "inputs": [{
-    "value": "http://www.example.org",
+    "value": "/path/to/file",
     "name": "file",
     "preproc": "download"
   }],
