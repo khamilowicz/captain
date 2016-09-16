@@ -10,12 +10,19 @@ defmodule Helmsman do
 
   def result(pid) do
     case Task.yield(pid) do
+      nil -> :running
       {:error, reason} -> throw(reason)
-      {:ok, {{:ok, result}, helmsman}} ->
-        #TODO: Add postprocessing to output
-        {:ok, %{result: Map.take(result, Map.keys(helmsman.io.output))}}
+      {:ok, result} -> handle_result(result)
     end
   end
+
+  @spec handle_result({{:ok, map} | {:error, map}, map}) :: {:ok, map} | {:error, map}
+  def handle_result({{:ok, result}, helmsman}) do
+    #TODO: Add postprocessing to output
+    {:ok, %{result: Map.take(result, Map.keys(helmsman.io.output))}}
+  end
+  def handle_result({{:error, %{error: reason}}, helmsman}), do: {:error, reason}
+  def handle_result({{:error, reason}, helmsman}), do: {:error, reason}
 
   def read([file: path]) do
     with {:ok, json} <- File.read(path),
