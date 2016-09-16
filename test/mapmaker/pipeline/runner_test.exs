@@ -2,7 +2,7 @@ defmodule OneToOne do
 
   def run(%{in1: in1} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
-    %{out1: in1 <> "a"}
+    {:ok, %{out1: in1 <> "a"}}
   end
 end
 
@@ -14,7 +14,7 @@ defmodule AsyncOneToOne do
       time = 20 + :rand.uniform(50)
       Process.sleep(time)
       send this, {:processor_called, __MODULE__, input}
-      %{out1: in1 <> "a"}
+      {:ok, %{out1: in1 <> "a"}}
     end)
   end
 end
@@ -24,7 +24,6 @@ defmodule FailingOneToOne do
   def run(%{in1: in1} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
     throw("Important error")
-    %{out1: in1 <> "a"}
   end
 end
 
@@ -32,14 +31,14 @@ defmodule OneToTwo do
 
   def run(%{in1: in1} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
-    %{out1: in1 <> "l", out2: in1 <> "r"}
+    {:ok, %{out1: in1 <> "l", out2: in1 <> "r"}}
   end
 end
 
 defmodule TwoToOne do
   def run(%{in1: in1, in2: in2} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
-    %{out1: in1 <> in2 <> "c"}
+    {:ok, %{out1: in1 <> in2 <> "c"}}
   end
 
 end
@@ -47,7 +46,7 @@ end
 defmodule OneToVariable do
   def run(%{in1: in1} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
-    %{outN: [%{out1: in1 <> "v"}, %{out1: in1 <> "v"}, %{out1: in1 <> "v"}] }
+    {:ok, %{outN: [%{out1: in1 <> "v"}, %{out1: in1 <> "v"}, %{out1: in1 <> "v"}] }}
   end
 end
 
@@ -55,7 +54,7 @@ defmodule VariableToOne do
   def run(%{inN: inN} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
     result = Enum.reduce(inN, "", fn(curr, acc) -> acc <> curr[:in1] end)
-    %{out1: result <> "r" }
+    {:ok, %{out1: result <> "r" }}
   end
 end
 

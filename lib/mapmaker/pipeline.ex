@@ -28,11 +28,12 @@ defmodule Mapmaker.Pipeline do
 
   @doc """
   #TODO: reword this
-  Given io_keys, returns specs that can use them
+  Given io_keys, returns pipeline with specs that can use them and updated status
   """
   @spec for_inputs(t, [String.t]) :: t
   def for_inputs(pipeline, keys) do
-    update_in pipeline.specs, &Enum.filter(&1, fn(spec) -> Pipeable.has_input_keys?(spec, keys) end)
+    update_in(pipeline.specs, &Enum.filter(&1, fn(spec) -> Pipeable.has_input_keys?(spec, keys) end))
+    |> update_status
   end
 
   @spec append_specs(t, [Spec.t]) :: t
@@ -93,9 +94,7 @@ defmodule Mapmaker.Pipeline do
   end
 
   def do_run(pipeline, input, extra) do
-    current_pipeline =
-      for_inputs(pipeline, Map.keys(input))
-      |> update_status
+    current_pipeline = for_inputs(pipeline, Map.keys(input))
 
     if status(current_pipeline) in [:running, :prepared] do
       selected_specs = prepared_and_running_specs(current_pipeline)

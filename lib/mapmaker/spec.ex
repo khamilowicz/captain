@@ -53,6 +53,7 @@ defmodule Mapmaker.Spec do
       processor ->
         %__MODULE__{
           processor: processor,
+          required: Map.get(raw_spec, "required", false),
           input: to_inputs(raw_spec["input"]),
           output: to_outputs(raw_spec["output"]),
         }
@@ -102,36 +103,41 @@ defmodule Mapmaker.Spec do
     %{key: key, mappings: mapping_parser.(mappings)}
   end
 
+  @spec handle_processor_output(Task.t | {:ok, map} | {:error, any}) :: {:ok, map} | no_return
   def handle_processor_output(%Task{} = task) do
     case Task.yield(task, @task_blocking_time) do
       nil -> {:running, task}
-      {:ok, result} -> {:ok, result}
-      {:error, result} -> throw(result)
+      {:error, reason} -> throw(reason)
+      {:ok, result} -> handle_processor_output(result)
     end
   end
-  def handle_processor_output(map), do: {:ok, map}
+  def handle_processor_output({:ok, result}), do: {:ok, result}
+  def handle_processor_output({:error, reason}), do: throw(reason)
 
-  def handle_computation_status(computation_status, spec) do
-    case computation_status do
-      {:ok, result} -> {Runnable.done(spec), Utils.remap_keys(result, spec.output)}
-      {:running, state} ->
-        new_spec = spec |> put_state(state) |> Runnable.running
-        {new_spec, %{}}
-    end
+  def handle_computation_status({:ok, result}, spec) do
+    {Runnable.done(spec), Utils.remap_keys(result, spec.output)}
+  end
+  def handle_computation_status({:running, state}, spec) do
+    new_spec = spec |> put_state(state) |> Runnable.running
+    {new_spec, %{}}
   end
 
-  def run(%{status: :running, state: state} = spec, input, extra) do
-    state |> handle_processor_output |> handle_computation_status(spec)
-  end
   def run(spec, input, extra) do
     try do
-      spec.input
-      |> Utils.input_joins(input)
-      |> get_processor(spec).run(extra)
-      |> handle_processor_output
-      |> handle_computation_status(spec)
+      do_run(spec, input, extra)
     catch
       any -> {Runnable.fail(spec), %{error: any}}
     end
+  end
+
+  def do_run(%{status: :running, state: state} = spec, _input, _extra) do
+    state |> handle_processor_output |> handle_computation_status(spec)
+  end
+  def do_run(spec, input, extra) do
+    spec.input
+    |> Utils.input_joins(input)
+    |> get_processor(spec).run(extra)
+    |> handle_processor_output
+    |> handle_computation_status(spec)
   end
 end
