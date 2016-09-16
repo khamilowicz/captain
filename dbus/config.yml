@@ -1,0 +1,7 @@
+duration:
+  connection:
+    address: tcp:host=localhost,port=12345
+  message:
+    interface: org.neutrino.DBus
+    path: /Neutrino/Processing/Processor
+    member: duration
