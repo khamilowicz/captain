@@ -68,7 +68,7 @@ defmodule Mapmaker.Spec do
   @spec get_processor(t) :: module
   def get_processor(%{processor: processor}), do: processor
 
-  @spec put_state(t, pid) :: module
+  @spec put_state(t, pid) :: t
   def put_state(spec, state), do: %{spec | state: state}
 
   @doc """
@@ -77,13 +77,11 @@ defmodule Mapmaker.Spec do
   """
   @spec to_inputs(map) :: map
   def to_inputs(inputs) do
-    Utils.select_regex_keys(inputs, @input_reg)
-    |> Enum.map(fn
-        {:inN, val} -> {:inN, to_n_mapping(val, &to_inputs/1)}
-        other -> other
-    end)
-    |> Enum.into(%{})
+    for key_val <- Utils.select_regex_keys(inputs, @input_reg), into: %{},
+      do: do_to_inputs(key_val)
   end
+  def do_to_inputs({:inN, val}), do: {:inN, to_n_mapping(val, &to_inputs/1)}
+  def do_to_inputs(any), do: any
 
   @doc """
   iex> Mapmaker.Spec.to_outputs(%{"out1234" => 1, "out10" => 2, "malice" => 3, "outN" => %{"key" => "hello", "mappings" => %{"out1" => "a"}}})
@@ -91,13 +89,11 @@ defmodule Mapmaker.Spec do
   """
   @spec to_outputs(map) :: map
   def to_outputs(inputs) do
-    Utils.select_regex_keys(inputs, @output_reg)
-    |> Enum.map(fn
-        {:outN, val} -> {:outN, to_n_mapping(val, &to_outputs/1)}
-        other -> other
-    end)
-    |> Enum.into(%{})
+    for key_val <- Utils.select_regex_keys(inputs, @output_reg), into: %{},
+      do: do_to_outputs(key_val)
   end
+  def do_to_outputs({:outN, val}), do: {:outN, to_n_mapping(val, &to_outputs/1)}
+  def do_to_outputs(any), do: any
 
   def to_n_mapping(%{"key" => key, "mappings" => mappings}, mapping_parser) do
     %{key: key, mappings: mapping_parser.(mappings)}
@@ -107,7 +103,7 @@ defmodule Mapmaker.Spec do
   def handle_processor_output(%Task{} = task) do
     case Task.yield(task, @task_blocking_time) do
       nil -> {:running, task}
-      {:error, reason} -> throw(reason)
+      {:exit, reason} -> throw(reason)
       {:ok, result} -> handle_processor_output(result)
     end
   end
