@@ -1,0 +1,19 @@
+{
+  "inputs": [{
+    "value": "/path/to/file",
+    "name": "file",
+    "preproc": "download"
+  }],
+  "outputs": [{
+    "name": "special_processing",
+    "postproc": "to_json"
+  }],
+  "pipelines": [
+    {
+      "name": "main",
+      "structure": [
+        {"processor": "my_special_processor", "input": {"in1": "file"}, "output": {"out1": "special_processing"}, "required": true}
+      ]
+    }
+  ]
+}

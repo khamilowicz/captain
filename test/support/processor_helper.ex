@@ -1,7 +1,7 @@
 defmodule Helmsman.ProcessorHelpers do
   import ExUnit.Callbacks
 
-  def setup_config(context) do
+  def setup_config(_context) do
     config_location = "./tmp/config.yml"
     config_content = """
     duration:
@@ -11,6 +11,13 @@ defmodule Helmsman.ProcessorHelpers do
         interface: org.neutrino.DBus
         path: /Neutrino/Processing/Processor
         member: duration
+    my_special_processor:
+      connection:
+        address: configured_address
+      message:
+        interface: configured_interface
+        path: configured_path
+        member: configured_member
     """
 
     File.mkdir("./tmp")
