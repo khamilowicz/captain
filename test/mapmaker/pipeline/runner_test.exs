@@ -1,6 +1,6 @@
 defmodule OneToOne do
 
-  def run(%{in1: in1} = input, _extra) do
+  def run(%{in1: in1} = input, extra) do
     send self, {:processor_called, __MODULE__, input}
     {:ok, %{out1: in1 <> "a"}}
   end
@@ -11,7 +11,7 @@ defmodule AsyncOneToOne do
   def run(%{in1: in1} = input, _extra) do
     this = self
     Task.async(fn ->
-      time = 20 + :rand.uniform(50)
+      time = 10 + :rand.uniform(11)
       Process.sleep(time)
       send this, {:processor_called, __MODULE__, input}
       {:ok, %{out1: in1 <> "a"}}
@@ -21,7 +21,7 @@ end
 
 defmodule FailingOneToOne do
 
-  def run(%{in1: in1} = input, _extra) do
+  def run(%{in1: _in1} = input, _extra) do
     send self, {:processor_called, __MODULE__, input}
     throw("Important error")
   end

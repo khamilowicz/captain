@@ -21,7 +21,7 @@ defmodule Mapmaker.Spec do
   @type status :: :prepared | :failed | :done | :running
 
   @type t :: %{
-    processor: module,
+    processor: module | {module, String.t},
     required: boolean,
     status: status,
     state: nil | pid,
@@ -52,7 +52,7 @@ defmodule Mapmaker.Spec do
       nil -> {:error, "Invalid processor #{raw_spec["processor"]}"}
       processor ->
         %__MODULE__{
-          processor: processor,
+          processor: {processor, raw_spec["processor"]},
           required: Map.get(raw_spec, "required", false),
           input: to_inputs(raw_spec["input"]),
           output: to_outputs(raw_spec["output"]),
@@ -118,9 +118,13 @@ defmodule Mapmaker.Spec do
     {new_spec, %{}}
   end
 
+  def run_processor({processor, ident}, input, extra),
+    do: run_processor(processor, input, Map.put(extra, :processor, ident))
+  def run_processor(processor, input, extra), do: processor.run(input, extra)
+
   def run(spec, input, extra) do
     try do
-      do_run(spec, input, extra)
+      do_run(spec, Utils.input_joins(spec.input, input), extra)
     catch
       any -> {Runnable.fail(spec), %{error: any}}
     end
@@ -130,9 +134,9 @@ defmodule Mapmaker.Spec do
     state |> handle_processor_output |> handle_computation_status(spec)
   end
   def do_run(spec, input, extra) do
-    spec.input
-    |> Utils.input_joins(input)
-    |> get_processor(spec).run(extra)
+    spec
+    |> get_processor
+    |> run_processor(input, extra)
     |> handle_processor_output
     |> handle_computation_status(spec)
   end
