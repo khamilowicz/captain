@@ -10,7 +10,7 @@ defmodule HelmsmanTest do
   end
   defmodule Duration do
     def run(_input, _extra) do
-      Task.async(fn -> {:ok, %{out1: "duration result"}} end)
+      Task.async(fn -> {:ok, %{"out1" => "duration result"}} end)
     end
   end
 
@@ -35,25 +35,8 @@ defmodule HelmsmanTest do
       assert {:error, "Oh snap!"} == Helmsman.result(runner)
     end
 
-    test "run/1 take %Helmsman{} and actullay runs specific processor" do
-      Application.put_env(Mapmaker, :processors, %{"duration" => Helmsman.Processor.Duration})
-      {:ok, helmsman} = Helmsman.read(file: "test/support/simple_structure.json")
-
-      runner = Helmsman.run(helmsman)
-
-      assert {:ok, %{result: %{"duration" => %{
-          connection_opts: %{address: "tcp:host=localhost,port=12345"},
-          message_params: %{
-            interface: "org.neutrino.DBus",
-            member: "duration",
-            message: "ThisIsMyMessage",
-            path: "/Neutrino/Processing/Processor"
-          }}}}
-      } = Helmsman.result(runner)
-    end
-
     test "run/1 takes %Helmsman{} and uses General processor" do
-      Application.put_env(Mapmaker, :processors, %{"my_special_processor" => Helmsman.Processor.General})
+      Application.put_env(Mapmaker, :processors, %{"any" => Helmsman.Processor.General})
       {:ok, helmsman} = Helmsman.read(file: "test/support/general_structure.json")
 
       runner = Helmsman.run(helmsman)
@@ -64,7 +47,7 @@ defmodule HelmsmanTest do
            message_params: %{
              interface: "configured_interface",
              member: "configured_member",
-             message: "ThisIsMyStandardMessage",
+             message: {"my_special_processor", _, %{"INPUT" => "/path/to/file"}},
              path: "configured_path"
            }}}}
       } = Helmsman.result(runner)

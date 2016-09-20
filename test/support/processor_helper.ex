@@ -11,13 +11,19 @@ defmodule Helmsman.ProcessorHelpers do
         interface: org.neutrino.DBus
         path: /Neutrino/Processing/Processor
         member: duration
-    my_special_processor:
+        arguments:
+         - INPUT
+         - OUTPUT
+    any:
       connection:
         address: configured_address
       message:
         interface: configured_interface
         path: configured_path
         member: configured_member
+        arguments:
+         - INPUT
+         - OUTPUT
     """
 
     File.mkdir("./tmp")

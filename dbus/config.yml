@@ -1,7 +1,10 @@
 duration:
   connection:
-    address: tcp:host=localhost,port=12345
+    address: tcp:host=192.168.1.19,port=8888
   message:
-    interface: org.neutrino.DBus
-    path: /Neutrino/Processing/Processor
-    member: duration
+    interface: org.neutrino.audiomatic.daemon
+    path: /Launcher
+    member: org.neutrino.audiomatic.Daemon.Launcher.StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT

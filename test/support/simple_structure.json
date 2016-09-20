@@ -12,7 +12,7 @@
     {
       "name": "main",
       "structure": [
-        {"processor": "duration", "input": {"in1": "file"}, "output": {"out1": "duration"}, "required": true}
+        {"processor": "duration", "input": {"INPUT": "file", "OUTPUT": "file"}, "output": {"out1": "duration"}, "required": true}
       ]
     }
   ]
