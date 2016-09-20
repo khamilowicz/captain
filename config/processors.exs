@@ -1,5 +1,5 @@
 use Mix.Config
 
 config :helmsman, :processors, [
-  config: "dbus/conifg.yml"
+  config: "/vagrant/apps/helmsman/dbus/config.yml"
   ]
