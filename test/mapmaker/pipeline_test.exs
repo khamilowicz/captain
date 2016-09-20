@@ -22,8 +22,8 @@ defmodule Mapmaker.PipelineTest do
       assert [a_spec] = Pipeline.for_input(context.pipeline, "a")
       assert [b_spec] = Pipeline.for_input(context.pipeline, "b")
 
-      assert Pipeable.get_input(a_spec, :in1) == "a"
-      assert Pipeable.get_input(b_spec, :in1) == "b"
+      assert Pipeable.get_input(a_spec, "in1") == "a"
+      assert Pipeable.get_input(b_spec, "in1") == "b"
     end
   end
 

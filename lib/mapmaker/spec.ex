@@ -29,11 +29,8 @@ defmodule Mapmaker.Spec do
     output: %{atom => String.t},
   }
 
-  @input_reg ~r{^in(\d\d?|N)$}
-  @output_reg ~r{^out(\d\d?|N)$}
   #TODO: Make it more flexible
   @task_blocking_time 10
-
 
   @derive [Mapmaker.Pipeable, Mapmaker.Runnable]
 
@@ -48,14 +45,14 @@ defmodule Mapmaker.Spec do
 
   @spec to_spec(map, module) :: t | {:error, String.t}
   def to_spec(raw_spec, processors) when is_map(raw_spec) do
-    case processors[raw_spec["processor"]] do
+    case processors[raw_spec["processor"]] || processors["any"] do
       nil -> {:error, "Invalid processor #{raw_spec["processor"]}"}
       processor ->
         %__MODULE__{
           processor: {processor, raw_spec["processor"]},
           required: Map.get(raw_spec, "required", false),
-          input: to_inputs(raw_spec["input"]),
-          output: to_outputs(raw_spec["output"]),
+          input: raw_spec["input"],
+          output: raw_spec["output"],
         }
     end
   end
@@ -70,34 +67,6 @@ defmodule Mapmaker.Spec do
 
   @spec put_state(t, pid) :: t
   def put_state(spec, state), do: %{spec | state: state}
-
-  @doc """
-  iex> Mapmaker.Spec.to_inputs(%{"in1" => 1, "malice" => 2, "in123" => 3, "inN" => %{"key" => "hello", "mappings" => %{"in1" => "a"}}})
-  %{in1: 1, inN: %{key: "hello", mappings: %{in1: "a"}}}
-  """
-  @spec to_inputs(map) :: map
-  def to_inputs(inputs) do
-    for key_val <- Utils.select_regex_keys(inputs, @input_reg), into: %{},
-      do: do_to_inputs(key_val)
-  end
-  def do_to_inputs({:inN, val}), do: {:inN, to_n_mapping(val, &to_inputs/1)}
-  def do_to_inputs(any), do: any
-
-  @doc """
-  iex> Mapmaker.Spec.to_outputs(%{"out1234" => 1, "out10" => 2, "malice" => 3, "outN" => %{"key" => "hello", "mappings" => %{"out1" => "a"}}})
-  %{out10: 2, outN: %{key: "hello", mappings: %{out1: "a"}}}
-  """
-  @spec to_outputs(map) :: map
-  def to_outputs(inputs) do
-    for key_val <- Utils.select_regex_keys(inputs, @output_reg), into: %{},
-      do: do_to_outputs(key_val)
-  end
-  def do_to_outputs({:outN, val}), do: {:outN, to_n_mapping(val, &to_outputs/1)}
-  def do_to_outputs(any), do: any
-
-  def to_n_mapping(%{"key" => key, "mappings" => mappings}, mapping_parser) do
-    %{key: key, mappings: mapping_parser.(mappings)}
-  end
 
   @spec handle_processor_output(Task.t | {:ok, map} | {:error, any}) :: {:ok, map} | no_return
   def handle_processor_output(%Task{} = task) do

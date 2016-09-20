@@ -46,7 +46,7 @@ defimpl Mapmaker.Pipeable, for: Any do
     spec.input
     |> Map.values
     |> Enum.map(fn
-      %{key: input_key} -> input_key
+      %{"key" => input_key} -> input_key
       input_key -> input_key
     end)
   end

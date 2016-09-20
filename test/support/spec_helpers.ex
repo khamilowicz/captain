@@ -16,8 +16,8 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(OneToOne)
-      |> Pipeable.put_input(:in1, "a")
-      |> Pipeable.put_output(:out1, "b")
+      |> Pipeable.put_input("in1", "a")
+      |> Pipeable.put_output("out1", "b")
 
     {:ok, Map.put(context, :one_to_one_spec, spec)}
   end
@@ -26,8 +26,8 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(AsyncOneToOne)
-      |> Pipeable.put_input(:in1, "a")
-      |> Pipeable.put_output(:out1, "b")
+      |> Pipeable.put_input("in1", "a")
+      |> Pipeable.put_output("out1", "b")
 
     {:ok, Map.put(context, :async_one_to_one_spec, spec)}
   end
@@ -36,9 +36,9 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(OneToTwo)
-      |> Pipeable.put_input(:in1, "b")
-      |> Pipeable.put_output(:out1, "c")
-      |> Pipeable.put_output(:out2, "d")
+      |> Pipeable.put_input("in1", "b")
+      |> Pipeable.put_output("out1", "c")
+      |> Pipeable.put_output("out2", "d")
 
     {:ok, Map.put(context, :one_to_two_spec, spec)}
   end
@@ -47,9 +47,9 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(TwoToOne)
-      |> Pipeable.put_input(:in1, "c")
-      |> Pipeable.put_input(:in2, "d")
-      |> Pipeable.put_output(:out2, "e")
+      |> Pipeable.put_input("in1", "c")
+      |> Pipeable.put_input("in2", "d")
+      |> Pipeable.put_output("out2", "e")
 
     {:ok, Map.put(context, :two_to_one_spec, spec)}
   end
@@ -58,8 +58,8 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(OneToVariable)
-      |> Pipeable.put_input(:in1, "a")
-      |> Pipeable.put_output(:outN, "b")
+      |> Pipeable.put_input("in1", "a")
+      |> Pipeable.put_output("outN", "b")
 
     {:ok, Map.put(context, :one_to_variable_spec, spec)}
   end
@@ -68,8 +68,8 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(VariableToOne)
-      |> Pipeable.put_input(:inN, "a")
-      |> Pipeable.put_output(:out1, "b")
+      |> Pipeable.put_input("inN", "a")
+      |> Pipeable.put_output("out1", "b")
 
     {:ok, Map.put(context, :variable_to_one_spec, spec)}
   end
@@ -78,8 +78,8 @@ defmodule Mapmaker.SpecHelpers do
     spec =
       %Spec{}
       |> Spec.put_processor(FailingOneToOne)
-      |> Pipeable.put_input(:in1, "a")
-      |> Pipeable.put_output(:out1, "b")
+      |> Pipeable.put_input("in1", "a")
+      |> Pipeable.put_output("out1", "b")
 
     {:ok, Map.put(context, :failing_one_to_one_spec, spec)}
   end
@@ -87,8 +87,8 @@ defmodule Mapmaker.SpecHelpers do
   def map_reducer_spec(context) do
     spec =
       %Mapping{}
-      |> Pipeable.put_input(:inN, "a")
-      |> Pipeable.put_output(:outN, "b")
+      |> Pipeable.put_input("inN", "a")
+      |> Pipeable.put_output("outN", "b")
 
     {:ok, Map.put(context, :map_reducer_spec, spec)}
   end

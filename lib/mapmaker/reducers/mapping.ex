@@ -5,9 +5,6 @@ defmodule Mapmaker.Reducers.Mapping do
 
   @derive [Mapmaker.Pipeable, Mapmaker.Runnable]
 
-  @input_reg ~r{^inN$}
-  @output_reg ~r{^outN$}
-
   @type status :: :prepared | :running | :done | :failed
 
   @type t :: %{
@@ -30,17 +27,9 @@ defmodule Mapmaker.Reducers.Mapping do
   def to_spec(raw_spec) when is_map(raw_spec) do
     %__MODULE__{
       pipeline: raw_spec["pipeline"],
-      input: to_inputs(raw_spec["input"]),
-      output: to_outputs(raw_spec["output"])
+      input: raw_spec["input"],
+      output: raw_spec["output"]
     }
-  end
-
-  def to_inputs(inputs) do
-    Utils.select_regex_keys(inputs, @input_reg)
-  end
-
-  def to_outputs(inputs) do
-    Utils.select_regex_keys(inputs, @output_reg)
   end
 
   def put_pipeline(map_spec, pipeline) do
@@ -58,7 +47,7 @@ defmodule Mapmaker.Reducers.Mapping do
     pipeline_input =
       spec.input
       |> Utils.input_joins(input)
-      |> Map.get(:inN)
+      |> Map.get("inN")
 
     #TODO: Use new specs and pipeline to create new pipe
     {new_specs, outputs} = pipeline_input
@@ -66,9 +55,9 @@ defmodule Mapmaker.Reducers.Mapping do
               |> Utils.transpose_tuples
 
     if Enum.any?(new_specs, &Runnable.failed?/1) do
-      {Runnable.fail(spec), %{spec.output[:outN] => outputs}}
+      {Runnable.fail(spec), %{spec.output["outN"] => outputs}}
     else
-      {Runnable.done(spec), %{spec.output[:outN] => outputs}}
+      {Runnable.done(spec), %{spec.output["outN"] => outputs}}
     end
   end
 end
