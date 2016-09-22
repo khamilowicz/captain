@@ -134,12 +134,16 @@ defmodule Helmsman do
   }
   @type result :: {:ok, map} | {:error, map}
 
+  require Logger
+
   defstruct [:structure, :io, :runner]
 
   @spec run(t, map) :: Task.t
   def run(helmsman, extra \\ %{}) do
     Task.async(fn ->
-      {helmsman.runner.run(helmsman.structure, helmsman.io.input, helmsman.io.output, extra), helmsman}
+      result = {helmsman.runner.run(helmsman.structure, helmsman.io.input, helmsman.io.output, extra), helmsman}
+      log(:finish)
+      result
     end)
   end
 
@@ -169,5 +173,9 @@ defmodule Helmsman do
   end
   def read([file: path]) do
     with {:ok, json} <- File.read(path), do: read([json: json])
+  end
+
+  def log(:finish) do
+    Logger.info("Finished processing")
   end
 end

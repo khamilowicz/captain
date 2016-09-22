@@ -25,7 +25,7 @@ defmodule Helmsman.Connection.MessageParser do
     {{:array, signature}, %DBux.Value{type: {:array, signature}, value: value}}
   end
   def do_build_message(message) when is_map(message) do
-    {[[key_signature, value_signature] | _] = _signatures, values} =
+    {[[key_signature, value_signature] | _], values} =
       message
       |> Enum.map(&do_build_message/1)
       |> Utils.traverse

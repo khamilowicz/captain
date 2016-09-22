@@ -4,6 +4,10 @@ use Mix.Config
 
 config :helmsman, :connection_provider, Helmsman.Connection
 
+config :logger, :console,
+	format: "\n$time $metadata[$level] $levelpad$message\n",
+	metadata: [:module, :pid, :address]
+
 import_config "processors.exs"
 import_config "#{Mix.env}.exs"
 
