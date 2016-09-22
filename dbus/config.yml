@@ -1,10 +1,141 @@
-duration:
+"wave-from-file":
   connection:
-    address: tcp:host=192.168.1.19,port=8888
+    address: tcp:host=192.168.1.20,port=8888
   message:
-    interface: org.neutrino.audiomatic.daemon
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
     member: org.neutrino.audiomatic.Daemon.Launcher.StartProcessor
     arguments:
       - INPUT
       - OUTPUT
+
+"format":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+      - DITHERING
+      - NOISE_SHAPING
+
+"dual-mono-to-stereo":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT_LEFT_CHANNEL
+      - INPUT_RIGHT_CHANNEL
+      - OUTPUT
+
+"stereo-reverse":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+
+"stereo-to-dual-mono":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT_LEFT_CHANNEL
+      - OUTPUT_RIGHT_CHANNEL
+
+"stereo-to-single-mono":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+
+"resample":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+      - QUALITY
+
+"high-pass-chebyshev":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+      - CUTOFF
+      - RIPPLE
+
+"low-pass-chebyshev":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+      - CUTOFF
+      - RIPPLE
+
+"mp4-from-file":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+
+"rescale":
+  connection:
+    address: tcp:host=192.168.1.20,port=8888
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Launcher
+    destination: org.neutrino.audiomatic.daemon.launcher
+    path: /Launcher
+    member: StartProcessor
+    arguments:
+      - INPUT
+      - OUTPUT
+      - SCALE
