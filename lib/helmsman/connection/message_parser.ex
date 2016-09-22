@@ -1,11 +1,10 @@
 defmodule Helmsman.Connection.MessageParser do
   alias Helmsman.Utils
 
-  def build_message(message, %{interface: interface, member: member, path: path}) do
+  def build_message(message, %{interface: interface, member: member, path: path, destination: destination}) do
     {sym_signature, parsed_messages} = do_build_message(message)
 
-    messages =
-      DBux.Message.build_method_call(path, interface, member, to_signature(sym_signature), List.wrap(parsed_messages))
+    DBux.Message.build_method_call(path, interface, member, to_signature(sym_signature), List.wrap(parsed_messages), destination)
   end
 
   def do_build_message(message) when is_tuple(message) do
@@ -27,9 +26,8 @@ defmodule Helmsman.Connection.MessageParser do
   end
   def do_build_message(message) when is_map(message) do
     {[[key_signature, value_signature] | _] = _signatures, values} =
-      Enum.map(message, fn
-         {key, value} -> [do_build_message(key), do_build_message(value)] |> Utils.traverse
-      end)
+      message
+      |> Enum.map(&do_build_message/1)
       |> Utils.traverse
 
     dict = Enum.map(values, &%DBux.Value{type: :dict_entry, value: &1})

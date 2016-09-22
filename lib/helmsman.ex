@@ -1,5 +1,5 @@
 defmodule Helmsman do
-  
+
   @type t :: %__MODULE__{
     structure: map,
     io:        map,

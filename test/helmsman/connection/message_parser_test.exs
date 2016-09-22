@@ -10,8 +10,9 @@ defmodule Helmsman.MessageParserTest do
 
       assert %DBux.Message{body: [
         %DBux.Value{type: :string, value: message}],
+        destination: "dest",
         serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "s"} ==
-      MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path"})
+      MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path", destination: "dest"})
     end
 
     test "from tuple" do
@@ -21,8 +22,10 @@ defmodule Helmsman.MessageParserTest do
         %DBux.Value{type: :string, value: "Hello"},
         %DBux.Value{type: :string, value: "there"},
         %DBux.Value{type: :string, value: "!"},
-      ], serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "sss"} ==
-                MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path"})
+      ], 
+      destination: "dest",
+      serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "sss"} ==
+                MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path", destination: "dest"})
     end
 
     test "from array" do
@@ -33,8 +36,10 @@ defmodule Helmsman.MessageParserTest do
           %DBux.Value{type: :string, value: "Hello"},
           %DBux.Value{type: :string, value: "there"},
           %DBux.Value{type: :string, value: "!"}
-        ]}], serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "as"} ==
-                MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path"})
+        ]}],
+        destination: "dest", 
+        serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "as"} ==
+                MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path", destination: "dest"})
     end
 
     test "from map" do
@@ -50,8 +55,10 @@ defmodule Helmsman.MessageParserTest do
             %DBux.Value{type: :string, value: "b"},
             %DBux.Value{type: :string, value: "there"},
           ]},
-        ]}], serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "a{ss}"} ==
-                MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path"})
+        ]}], 
+    destination: "dest",
+    serial: 0, interface: "interface", member: "member", message_type: :method_call, path: "path", signature: "a{ss}"} ==
+                MessageParser.build_message(message, %{interface: "interface", member: "member", path: "path", destination: "dest"})
     end
   end
 end

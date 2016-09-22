@@ -41,16 +41,8 @@ defmodule HelmsmanTest do
 
       runner = Helmsman.run(helmsman)
 
-      assert {:ok, %{result: %{"special_processing" =>
-         %Helmsman.TestConnection{
-           connection_opts: %{address: "configured_address"},
-           message_params: %{
-             interface: "configured_interface",
-             member: "configured_member",
-             message: {"my_special_processor", _, %{"INPUT" => "/path/to/file"}},
-             path: "configured_path"
-           }}}}
-      } = Helmsman.result(runner)
+      assert {:ok, %{result: %{"special_processing" => path}}} = Helmsman.result(runner)
+      assert path =~ ~r{/tmp/}
     end
   end
 end

@@ -9,6 +9,7 @@ defmodule Helmsman.ProcessorHelpers do
         address: tcp:host=localhost,port=12345
       message:
         interface: org.neutrino.DBus
+        destination: org.neutrino.DBus
         path: /Neutrino/Processing/Processor
         member: duration
         arguments:
@@ -20,6 +21,7 @@ defmodule Helmsman.ProcessorHelpers do
       message:
         interface: configured_interface
         path: configured_path
+        destination: org.neutrino.DBus
         member: configured_member
         arguments:
          - INPUT
