@@ -16,12 +16,12 @@ defmodule Mapmaker.Pipeline.Runner do
     pipeline_register = Pipeline.Register.from_structure(structure)
     main_pipeline = Pipeline.Register.main(pipeline_register)
 
-
     extra = Map.put(extra, :register, pipeline_register)
 
     run(main_pipeline, input, output, extra)
   end
-  def run(%Pipeline{} = pipeline, input, _output, extra) do
+  def run(%Pipeline{} = pipeline, input, output, extra) do
+
     {executed_pipeline, result} = Runnable.run(pipeline, input, extra)
 
     case Pipeline.status(executed_pipeline) do

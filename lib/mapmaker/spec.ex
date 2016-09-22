@@ -93,6 +93,7 @@ defmodule Mapmaker.Spec do
 
   def run(spec, input, extra) do
     try do
+      extra = Map.put(extra, :output, spec.output)
       do_run(spec, Utils.input_joins(spec.input, input), extra)
     catch
       any -> {Runnable.fail(spec), %{error: any}}
