@@ -26,6 +26,17 @@ defmodule HelmsmanTest do
       assert {:ok, %{result: %{"duration" => "duration result"}}} == Helmsman.result(runner)
     end
 
+    test "run/1 takes %Helmsman{} and starts processing and executes postprocessors" do
+      Application.put_env(Mapmaker, :processors, %{"duration" => HelmsmanTest.Duration})
+      {:ok, helmsman} = Helmsman.read(file: "test/support/simple_structure.json")
+
+      this = self
+      runner = Helmsman.run(helmsman, [fn(res) -> send(this, {:postprocess, res}); res end])
+
+      assert {:ok, %{result: %{"duration" => "duration result"}}} == Helmsman.result(runner)
+      assert_receive {:postprocess, %{"duration" => "duration result", "file" => "/path/to/file"}}
+    end
+
     test "run/1 takes %Helmsman{} and returns error when failing processor" do
       Application.put_env(Mapmaker, :processors, %{"duration" => HelmsmanTest.FailingDuration})
       {:ok, helmsman} = Helmsman.read(file: "test/support/simple_structure.json")

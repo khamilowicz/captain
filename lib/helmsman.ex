@@ -138,10 +138,15 @@ defmodule Helmsman do
 
   defstruct [:structure, :io, :runner]
 
-  @spec run(t, map) :: Task.t
-  def run(helmsman, extra \\ %{}) do
+  @spec run(t, map, [(map -> map)]) :: Task.t
+  def run(helmsman, postprocess) when is_list(postprocess), do: run(helmsman, %{}, postprocess)
+  def run(helmsman, extra) when is_map(extra), do: run(helmsman, extra, [])
+  def run(helmsman, extra \\ %{}, postprocess \\ []) do
     Task.async(fn ->
-      result = {helmsman.runner.run(helmsman.structure, helmsman.io.input, helmsman.io.output, extra), helmsman}
+      result = {
+        apply_middleware(helmsman.runner.run(helmsman.structure, helmsman.io.input, helmsman.io.output, extra), postprocess),
+        helmsman 
+      }
       log(:finish)
       result
     end)
@@ -174,6 +179,11 @@ defmodule Helmsman do
   def read([file: path]) do
     with {:ok, json} <- File.read(path), do: read([json: json])
   end
+
+  def apply_middleware({:ok, result}, functions) do
+    {:ok, Enum.reduce(functions, result, & &1.(&2))}
+  end
+  def apply_middleware({:error, _} = res, functions), do: res
 
   def log(:finish) do
     Logger.info("Finished processing")
