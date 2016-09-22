@@ -1,5 +1,4 @@
 defmodule Helmsman.ProcessorHelpers do
-  import ExUnit.Callbacks
 
   def setup_config(_context) do
     config_location = "./tmp/config.yml"

@@ -1,11 +1,11 @@
 defmodule Helmsman.Processor.General do
-  use Helmsman.Processor
+  alias Helmsman.Processor
 
   def run(input, extra) do
     Task.async(fn ->
       input = generate_output_locations(extra[:output], input)
 
-      case start_processor(extra[:processor], input) do
+      case Processor.start_processor(extra[:processor], input) do
         # input contains OUTPUT value, processor doesn't need result of operation
         #
         {:ok, _result} -> {:ok, input}

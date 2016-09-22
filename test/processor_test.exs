@@ -13,6 +13,6 @@ defmodule Helmsman.ProcessorTest do
         "interface" => "org.neutrino.DBus",
         "member" => "duration",
         "path" => "/Neutrino/Processing/Processor"}
-    } = Helmsman.Processor.General.config("duration")
+    } = Helmsman.Processor.config("duration")
   end
 end
