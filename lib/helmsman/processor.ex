@@ -1,54 +1,54 @@
 defmodule Helmsman.Processor do
 
-  alias Helmsman.Processor.Config
-  alias Helmsman.Connection.MessageParser
+  alias Helmsman.Processor.{Config, Connection, Message, FileManager, Cleanup}
 
-  defmacro __using__(opts) do
-    name = Keyword.get(opts, :name, "standard")
-    quote(location: :keep) do
+  def config_location,
+  do: Application.get_env(:helmsman, :processors)[:config]
 
-      @name unquote(name)
-      @connection_provider Application.get_env(:helmsman, :connection_provider)
+  def config(name) do
+    config = Config.open(config_location)
+    config[name] || config["any"]
+  end
 
-      def connection_provider, do: @connection_provider
+  def delete_files(connection, filenames), do: Enum.map(filenames, &delete_file(connection, &1))
+  def delete_file(conn_options_or_connection, filename) do
+    params =
+      Message.build([])
+      |> Message.put_options(config("delete-file")["message"])
+      |> Message.put_input({filename})
+      |> Message.format
 
-      def establish_connection(connection_options), do:
-        connection_provider.start_link(connection_options)
-
-      def config_location, do:
-        Application.get_env(:helmsman, :processors)[:config]
-
-      def config(), do: config(@name)
-      def config(name) do
-        config = Config.open(config_location)
-        config[name] || config["any"]
-      end
-
-      def connection_options(%{"connection" => %{"address" => address}}), do:
-        %{address: address}
-
-      def message_options(%{"message" => %{"interface" => interface, "path" => path, "member" => member}}), do:
-        %{interface: interface, path: path, member: member}
-
-      def allowed_input(input, %{"message" => %{"arguments" => args}}), do:
-        Map.take(input, args)
-
-      def generate_identifier, do:
-        Base.url_encode64(:crypto.rand_bytes(10))
-
-      def start_processor(name, input) do
-        processor_config = config(name)
-
-        connection_options = connection_options(processor_config)
-        message_params = message_options(processor_config)
-        parsed_input = allowed_input(input, processor_config)
-
-        message = {name, generate_identifier, parsed_input}
-
-        with {:ok, connection} <- establish_connection(connection_options(processor_config)) do
-          connection_provider.send_message(connection, message_params)
-        end
-      end
+    with {:ok, connection} <- Connection.establish_connection(conn_options_or_connection) do
+      Connection.send_async_message(connection, params)
     end
+  end
+
+  def start_processor(name, input, extra) do
+    processor_config = config(name)
+
+    message =
+      Message.build(processor_config["message"]["arguments"])
+      |> Message.put_name(name)
+      |> Message.put_input(input)
+      |> Message.put_options(processor_config["message"])
+
+    message_params = Message.format(message)
+    conn_options = Connection.connection_options(processor_config)
+
+    with {:ok, connection} <- Connection.establish_connection(conn_options),
+         {:ok, result} <- Connection.send_message(connection, message_params),
+         :ok <- cleanup(conn_options, input, extra[:cleaner])
+    do
+      {:ok, result}
+    else
+      # TODO: make it better
+      any -> {:error, any}
+    end
+  end
+
+  def cleanup(connection, input, cleaner) do
+    temp_files = Map.values(input) |> Enum.filter(&FileManager.filename?/1)
+    # Cleanup.add_cleanup(cleaner, __MODULE__, :delete_files, [connection, temp_files])
+    :ok
   end
 end

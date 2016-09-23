@@ -10,6 +10,7 @@ defmodule Helmsman.Supervisor do
 
     children = [
       supervisor(Helmsman.Connection.Supervisor, []),
+      worker(Helmsman.Connection.Pool, [[name: Helmsman.Connection.Pool]])
     ]
 
     options = [strategy: :one_for_one]

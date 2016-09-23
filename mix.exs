@@ -29,6 +29,7 @@ defmodule Helmsman.Mixfile do
       applications: [
         :logger,
         :dbux,
+        :httpoison,
         :yaml_elixir
       ]
     ]
@@ -51,7 +52,8 @@ defmodule Helmsman.Mixfile do
     [
       {:dbux, git: "https://github.com/khamilowicz/dbux"},
       {:mapmaker, in_umbrella: true},
-     { :yaml_elixir, "~> 1.1" }
-   ]
+      {:httpoison, "~> 0.9"},
+      {:yaml_elixir, "~> 1.1"}
+    ]
   end
 end
