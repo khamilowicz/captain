@@ -5,6 +5,8 @@ defmodule Captain.Mixfile do
     [apps_path: "apps",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     dialyzer: [plt_add_deps: :transitive,
+      flags: [ "-Werror_handling", "-Wrace_conditions", "-Woverspecs", "-Wunderspecs", "-Wspecdiffs", "-Wunknown" ]],
      deps: deps]
   end
 
