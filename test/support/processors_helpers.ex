@@ -18,8 +18,8 @@ defmodule Mapmaker.ProcessorsHelpers do
   end
 
   def configure_processors(context) do
-    Application.put_env(Mapmaker, :processors, context.processors)
-    Application.put_env(Mapmaker, :postprocessors, context[:postprocessors])
+    Application.put_env(:mapmaker, :processors, context.processors)
+    Application.put_env(:mapmaker, :postprocessors, context[:postprocessors])
     :ok
   end
 end

@@ -33,7 +33,7 @@ end
 defimpl Poison.Decoder, for: Mapmaker.Pipeline.Register.Entry do
   alias Mapmaker.Reducers.Mapping
   def processor_register do
-    Application.get_env(Mapmaker, :processors)
+    Application.get_env(:mapmaker, :processors)
   end
   def decode(in_pipeline, _options) do
     specs = in_pipeline.structure |> Enum.map(&to_specs/1)
