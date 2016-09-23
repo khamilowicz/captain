@@ -1,69 +1,3 @@
-defmodule DoNothing do
-  def run(input) do
-    send self, {:postprocessor_called, __MODULE__, input}
-    {:ok, input}
-  end
-end
-defmodule OneToOne do
-
-  def run(%{"in1" => in1} = input, extra) do
-    send self, {:processor_called, __MODULE__, input}
-    {:ok, %{"out1" =>  in1 <> "a"}}
-  end
-end
-
-defmodule AsyncOneToOne do
-
-  def run(%{"in1" => in1} = input, _extra) do
-    this = self
-    Task.async(fn ->
-      time = 10 + :rand.uniform(11)
-      Process.sleep(time)
-      send this, {:processor_called, __MODULE__, input}
-      {:ok, %{"out1" =>  in1 <> "a"}}
-    end)
-  end
-end
-
-defmodule FailingOneToOne do
-
-  def run(%{"in1" => _in1} = input, _extra) do
-    send self, {:processor_called, __MODULE__, input}
-    throw("Important error")
-  end
-end
-
-defmodule OneToTwo do
-
-  def run(%{"in1" => in1} = input, _extra) do
-    send self, {:processor_called, __MODULE__, input}
-    {:ok, %{"out1" =>  in1 <> "l", "out2" => in1 <> "r"}}
-  end
-end
-
-defmodule TwoToOne do
-  def run(%{"in1" => in1, "in2" => in2} = input, _extra) do
-    send self, {:processor_called, __MODULE__, input}
-    {:ok, %{"out1" =>  in1 <> in2 <> "c"}}
-  end
-
-end
-
-defmodule OneToVariable do
-  def run(%{"in1" => in1} = input, _extra) do
-    send self, {:processor_called, __MODULE__, input}
-    {:ok, %{"outN" => [%{"out1" =>  in1 <> "v"}, %{"out1" =>  in1 <> "v"}, %{"out1" =>  in1 <> "v"}] }}
-  end
-end
-
-defmodule VariableToOne do
-  def run(%{"inN" => inN} = input, _extra) do
-    send self, {:processor_called, __MODULE__, input}
-    result = Enum.reduce(inN, "", fn(curr, acc) -> acc <> curr["in1"] end)
-    {:ok, %{"out1" =>  result <> "r" }}
-  end
-end
-
 defmodule Mapmaker.Pipeline.RunnerTest do
   use ExUnit.Case, async: true
 
@@ -110,9 +44,9 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       straight_pipeline = Pipeline.to_pipeline(context.specs)
 
       assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fa"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "faa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "faa"}}
       assert result["d"] == "faaa"
     end
 
@@ -120,13 +54,13 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       straight_pipeline = Pipeline.to_pipeline(context.async_specs)
 
       assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
-      assert_receive {:processor_called, AsyncOneToOne, %{"in1" =>  "f"}}
-      assert_receive {:processor_called, AsyncOneToOne, %{"in1" =>  "fa"}}
-      assert_receive {:processor_called, AsyncOneToOne, %{"in1" =>  "faa"}}
+      assert_receive {:processor_called, Mapmaker.SpecHelpers.AsyncOneToOne, %{"in1" =>  "f"}}
+      assert_receive {:processor_called, Mapmaker.SpecHelpers.AsyncOneToOne, %{"in1" =>  "fa"}}
+      assert_receive {:processor_called, Mapmaker.SpecHelpers.AsyncOneToOne, %{"in1" =>  "faa"}}
       assert result["d"] == "faaa"
     end
 
-    test "Runner.run/1 executes processors, returns error if requred spec fails", context do
+    test "Runner.run/1 executes processors, returns error if requred spec fails (retries 5 times)", context do
 
       required_spec =
         context.failing_one_to_one_spec
@@ -138,9 +72,13 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       straight_pipeline = Pipeline.to_pipeline(specs)
 
       assert {:error, result} = Runner.run(straight_pipeline, %{"a" => "f"})
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-      assert_received {:processor_called, FailingOneToOne, %{"in1" =>  "fa"}}
-      refute_received {:processor_called, OneToOne, _a}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fa"}}
+      refute_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, _a}
 
       assert result[:error] == "Important error"
     end
@@ -156,9 +94,9 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       straight_pipeline = Pipeline.to_pipeline(specs)
 
       assert {:ok, result} = Runner.run(straight_pipeline, %{"a" => "f"})
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-      assert_received {:processor_called, FailingOneToOne, %{"in1" =>  "fa"}}
-      refute_received {:processor_called, OneToOne, _a}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fa"}}
+      refute_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, _a}
 
       assert result[:error] == "Important error"
       assert result["b"] == "fa"
@@ -195,11 +133,11 @@ defmodule Mapmaker.Pipeline.RunnerTest do
         forked_pipeline = Pipeline.to_pipeline(specs)
         assert {:ok, result} = Runner.run(forked_pipeline, %{"a" => "f"})
 
-        assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-        assert_received {:processor_called, OneToTwo, %{"in1" =>  "fa"}}
-        assert_received {:processor_called, OneToOne, %{"in1" =>  "fal"}}
-        assert_received {:processor_called, OneToOne, %{"in1" =>  "far"}}
-        assert_received {:processor_called, TwoToOne, %{"in1" =>  "fala", "in2" =>  "fara"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.OneToTwo, %{"in1" =>  "fa"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fal"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "far"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.TwoToOne, %{"in1" =>  "fala", "in2" =>  "fara"}}
         assert %{"g" => "falafarac"} = result
     end
 
@@ -230,11 +168,11 @@ defmodule Mapmaker.Pipeline.RunnerTest do
         forked_pipeline = Pipeline.to_pipeline(specs)
         assert {:ok, result} = Runner.run(forked_pipeline, %{"a" => "f"})
 
-        assert_received {:processor_called, AsyncOneToOne, %{"in1" =>  "f"}}
-        assert_received {:processor_called, OneToTwo, %{"in1" =>  "fa"}}
-        assert_received {:processor_called, AsyncOneToOne, %{"in1" =>  "fal"}}
-        assert_received {:processor_called, AsyncOneToOne, %{"in1" =>  "far"}}
-        assert_received {:processor_called, TwoToOne, %{"in1" =>  "fala", "in2" =>  "fara"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.AsyncOneToOne, %{"in1" =>  "f"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.OneToTwo, %{"in1" =>  "fa"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.AsyncOneToOne, %{"in1" =>  "fal"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.AsyncOneToOne, %{"in1" =>  "far"}}
+        assert_received {:processor_called, Mapmaker.SpecHelpers.TwoToOne, %{"in1" =>  "fala", "in2" =>  "fara"}}
         assert %{"g" => "falafarac"} = result
     end
   end
@@ -261,9 +199,9 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       variable_pipeline = Pipeline.to_pipeline(specs)
       assert {:ok, result} = Runner.run(variable_pipeline, %{"a" => "f"})
 
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-      assert_received {:processor_called, OneToVariable, %{"in1" =>  "fa"}}
-      assert_received {:processor_called, VariableToOne, %{"inN" => [%{"in1" =>  "fav"}, %{"in1" =>  "fav"}, %{"in1" =>  "fav"}]}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToVariable, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.VariableToOne, %{"inN" => [%{"in1" =>  "fav"}, %{"in1" =>  "fav"}, %{"in1" =>  "fav"}]}}
 
       assert result["d"] == "favfavfavr"
     end
@@ -304,14 +242,14 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       #
       assert {:error, _result} = Runner.run(variable_failing_pipeline, %{"a" => "f"})
 
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-      assert_received {:processor_called, OneToVariable, %{"in1" =>  "fa"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fav"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fav"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fav"}}
-      assert_received {:processor_called, FailingOneToOne, %{"in1" =>  "fava"}}
-      assert_received {:processor_called, FailingOneToOne, %{"in1" =>  "fava"}}
-      assert_received {:processor_called, FailingOneToOne, %{"in1" =>  "fava"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToVariable, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fav"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fav"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fav"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fava"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fava"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.FailingOneToOne, %{"in1" =>  "fava"}}
 
     end
 
@@ -338,11 +276,11 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       variable_pipeline = Pipeline.to_pipeline(specs)
       assert {:ok, result} = Runner.run(variable_pipeline, %{"a" => "f"})
 
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "f"}}
-      assert_received {:processor_called, OneToVariable, %{"in1" =>  "fa"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fav"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fav"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>  "fav"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "f"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToVariable, %{"in1" =>  "fa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fav"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fav"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>  "fav"}}
 
       assert Enum.map(result["d"], &Map.get(&1, "output")) == ["fava", "fava", "fava"]
     end
@@ -361,22 +299,22 @@ defmodule Mapmaker.Pipeline.RunnerTest do
         "h" => "http://www.example.orgaalvaahttp://www.example.orgaalvaahttp://www.example.orgaalvaar",
       } = result)
 
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.org"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orga"}}
-      assert_received {:processor_called, OneToTwo, %{"in1" =>   "http://www.example.orgaa"}}
-      assert_received {:processor_called, OneToVariable, %{"in1" =>   "http://www.example.orgaal"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalv"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalv"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalv"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.org"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orga"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToTwo, %{"in1" =>   "http://www.example.orgaa"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToVariable, %{"in1" =>   "http://www.example.orgaal"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalv"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalv"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalv"}}
 
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
-      assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
+      assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
 
-      assert_received {:postprocessor_called, DoNothing, h}
+      assert_received {:postprocessor_called, Mapmaker.SpecHelpers.DoNothing, h}
       assert h == result["h"]
 
-      assert_received {:processor_called, VariableToOne, %{"inN" => [
+      assert_received {:processor_called, Mapmaker.SpecHelpers.VariableToOne, %{"inN" => [
          %{"in1" =>  "http://www.example.orgaalvaa"},
          %{"in1" =>  "http://www.example.orgaalvaa"},
          %{"in1" =>  "http://www.example.orgaalvaa"}]}}
@@ -385,13 +323,13 @@ defmodule Mapmaker.Pipeline.RunnerTest do
 
   def configure_processors(_context) do
     processors = %{
-      "one.to.one" => OneToOne,
-      "variable.to.one" => VariableToOne,
-      "one.to.two" => OneToTwo,
-      "one.to.variable" => OneToVariable,
+      "one.to.one"      => Mapmaker.SpecHelpers.OneToOne,
+      "variable.to.one" => Mapmaker.SpecHelpers.VariableToOne,
+      "one.to.two"      => Mapmaker.SpecHelpers.OneToTwo,
+      "one.to.variable" => Mapmaker.SpecHelpers.OneToVariable,
     }
     postprocessors = %{
-      "upload" => DoNothing
+      "upload" => Mapmaker.SpecHelpers.DoNothing
     }
     Mapmaker.ProcessorsHelpers.configure_processors(%{processors: processors, postprocessors: postprocessors})
     :ok
