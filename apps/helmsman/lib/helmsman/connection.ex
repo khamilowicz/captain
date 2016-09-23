@@ -161,7 +161,10 @@ defmodule Helmsman.Connection do
   end
 
   @spec wait_for_result(:ok | {:error, any}, pid) :: {:ok, [any]} | {:error, [any]}
-  def wait_for_result({:error, _} = err, connection), do: log(:send_message_fail, connection, err)
+  def wait_for_result({:error, reason} = err, connection) do
+    log(:send_message_fail, connection, err)
+    throw(:timeout)
+  end
   def wait_for_result(:ok, connection) do
     log(:send_message_success, connection)
     receive do
