@@ -11,3 +11,6 @@ config :mapmaker, :processors, %{
 config :mapmaker, :postprocessors, %{
   "download" => Helmsman.Postprocessors.Download
   }
+config :mapmaker, :specs, %{
+  max_retries: 5,
+  }

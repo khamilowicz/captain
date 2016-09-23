@@ -24,6 +24,7 @@ defmodule Mapmaker.Spec do
     processor: module | {module, String.t},
     required: boolean,
     status: status,
+    retries: non_neg_integer,
     state: nil | pid,
     input: %{atom => String.t},
     output: %{atom => String.t},
@@ -31,12 +32,14 @@ defmodule Mapmaker.Spec do
 
   #TODO: Make it more flexible
   @task_blocking_time 10
+  @max_retries Map.get(Application.get_env(:mapmaker, :specs), :max_retries, 5)
 
   @derive [Mapmaker.Pipeable, Mapmaker.Runnable]
 
   defstruct [
     processor: NullProcessor,
     required: false,
+    retries: 0,
     state: nil,
     status: :prepared,
     input: %{},
@@ -96,9 +99,14 @@ defmodule Mapmaker.Spec do
       extra = Map.put(extra, :output, spec.output)
       do_run(spec, Utils.input_joins(spec.input, input), extra)
     catch
-      any -> {Runnable.fail(spec), %{error: any}}
+      any -> {retry(spec), %{error: any}}
     end
   end
+
+  def retry(%{retries: retries} = spec) when retries < @max_retries,
+    do: %{spec | retries: retries + 1}
+  def retry(%{retries: retries} = spec) when retries >= @max_retries,
+    do: Runnable.fail(spec)
 
   def do_run(%{status: :running, state: state} = spec, _input, _extra) do
     state |> handle_processor_output |> handle_computation_status(spec)
