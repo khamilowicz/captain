@@ -48,7 +48,6 @@ defmodule Helmsman.Processor do
 
   def cleanup(connection, input, cleaner) do
     temp_files = Map.values(input) |> Enum.filter(&FileManager.filename?/1)
-    # Cleanup.add_cleanup(cleaner, __MODULE__, :delete_files, [connection, temp_files])
-    :ok
+    Cleanup.add_cleanup(cleaner, __MODULE__, :delete_files, [connection, temp_files])
   end
 end
