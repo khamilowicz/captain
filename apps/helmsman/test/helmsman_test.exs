@@ -28,7 +28,7 @@ defmodule HelmsmanTest do
 
       runner = Helmsman.run(helmsman)
 
-      assert {:ok, %{result: %{"duration" => "\"duration result\""}}} == Helmsman.result(runner)
+      assert {:ok, %{result: %{"duration" => ~s{"duration result"}}}} == Helmsman.result(runner)
     end
 
     test "run/1 takes %Helmsman{} and starts processing and executes postprocessors" do
@@ -38,8 +38,8 @@ defmodule HelmsmanTest do
       this = self
       runner = Helmsman.run(helmsman, [fn(res) -> send(this, {:postprocess, res}); res end])
 
-      assert {:ok, %{result: %{"duration" => "\"duration result\""}}} == Helmsman.result(runner)
-      assert_receive {:postprocess, %{"duration" => "\"duration result\""}}
+      assert {:ok, %{result: %{"duration" => ~s{"duration result"}}}} == Helmsman.result(runner)
+      assert_receive {:postprocess, %{"duration" => ~s{"duration result"}}}
     end
 
     test "run/1 takes %Helmsman{} and returns error when failing processor" do
