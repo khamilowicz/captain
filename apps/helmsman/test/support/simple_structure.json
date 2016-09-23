@@ -1,0 +1,19 @@
+{
+  "inputs": [{
+    "value": "/path/to/file",
+    "name": "file",
+    "preproc": "download"
+  }],
+  "outputs": [{
+    "name": "duration",
+    "postproc": "to_json"
+  }],
+  "pipelines": [
+    {
+      "name": "main",
+      "structure": [
+        {"processor": "duration", "input": {"INPUT": "file", "OUTPUT": "file"}, "output": {"out1": "duration"}, "required": true}
+      ]
+    }
+  ]
+}
