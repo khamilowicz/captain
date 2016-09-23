@@ -1,3 +1,9 @@
+defmodule DoNothing do
+  def run(input) do
+    send self, {:postprocessor_called, __MODULE__, input}
+    {:ok, input}
+  end
+end
 defmodule OneToOne do
 
   def run(%{"in1" => in1} = input, extra) do
@@ -367,6 +373,9 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
       assert_received {:processor_called, OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
 
+      assert_received {:postprocessor_called, DoNothing, h}
+      assert h == result["h"]
+
       assert_received {:processor_called, VariableToOne, %{"inN" => [
          %{"in1" =>  "http://www.example.orgaalvaa"},
          %{"in1" =>  "http://www.example.orgaalvaa"},
@@ -381,7 +390,10 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       "one.to.two" => OneToTwo,
       "one.to.variable" => OneToVariable,
     }
-    Mapmaker.ProcessorsHelpers.configure_processors(%{processors: processors})
+    postprocessors = %{
+      "upload" => DoNothing
+    }
+    Mapmaker.ProcessorsHelpers.configure_processors(%{processors: processors, postprocessors: postprocessors})
     :ok
   end
 end

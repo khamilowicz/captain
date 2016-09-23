@@ -19,10 +19,7 @@ defimpl Poison.Decoder, for: Mapmaker.Structure.IO do
       |> Enum.map(&{&1["name"], &1["value"]})
       |> Enum.into(%{})
 
-    output =
-      value.outputs
-      |> Enum.map(&{&1["name"], &1["value"]})
-      |> Enum.into(%{})
+    output = Enum.map(value.outputs, &%Mapmaker.Pipeline.Output{name: &1["name"], postprocess: &1["postproc"]})
 
     %{value | input: input, output: output}
   end
