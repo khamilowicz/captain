@@ -139,3 +139,10 @@
       - INPUT
       - OUTPUT
       - SCALE
+
+"delete-file":
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Fetcher
+    destination: org.neutrino.audiomatic.daemon.fetcher
+    path: /Fetcher
+    member: DeleteFile

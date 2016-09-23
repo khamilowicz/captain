@@ -10,4 +10,8 @@ defmodule Helmsman.TestConnection do
     {:ok, %{state | message_params: params}}
   end
 
+  def send_async_message(connection, params) do
+    state = Agent.get(connection, & &1)
+    {:ok, %{state | message_params: params}}
+  end
 end

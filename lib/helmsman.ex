@@ -98,7 +98,7 @@ defmodule Helmsman do
 
     Mappings between strings and modules can be configured in config files:
 
-       config Mapmaker, :processors, %{
+       config :mapmaker, :processors, %{
           "format" => MyApplication.Processors.Format
           "stereo-to-dual-mono" => MyApplication.Processors.StereoToDualMono,
 					"any" => MyApplication.Processors.DoAllOtherStuff
@@ -135,6 +135,7 @@ defmodule Helmsman do
   @type result :: {:ok, map} | {:error, map}
 
   require Logger
+  alias Helmsman.Processor.Cleanup
 
   defstruct [:structure, :io, :runner]
 
@@ -142,14 +143,20 @@ defmodule Helmsman do
   def run(helmsman, postprocess) when is_list(postprocess), do: run(helmsman, %{}, postprocess)
   def run(helmsman, extra) when is_map(extra), do: run(helmsman, extra, [])
   def run(helmsman, extra \\ %{}, postprocess \\ []) do
-    Task.async(fn ->
-      result = {
+    Task.async(__MODULE__, :do_run, [helmsman, extra, postprocess])
+  end
+
+  def do_run(helmsman, extra, postprocess) do
+    result =
+    Cleanup.with_cleaner fn(cleaner) ->
+      extra = Map.put(extra, :cleaner, cleaner)
+      {
         apply_middleware(helmsman.runner.run(helmsman.structure, helmsman.io.input, helmsman.io.output, extra), postprocess),
-        helmsman 
+        helmsman
       }
-      log(:finish)
-      result
-    end)
+    end
+    log(:finish)
+    result
   end
 
   @spec result(Task.t) :: result | :running
@@ -162,10 +169,7 @@ defmodule Helmsman do
   end
 
   @spec handle_result({result, t}) :: result
-  def handle_result({{:ok, result}, helmsman}) do
-    #TODO: Add postprocessing to output
-    {:ok, %{result: Map.take(result, Map.keys(helmsman.io.output))}}
-  end
+  def handle_result({{:ok, result}, helmsman}), do: {:ok, %{result: result}}
   def handle_result({{:error, %{error: reason}}, _helmsman}), do: {:error, reason}
   def handle_result({{:error, reason}, _helmsman}), do: {:error, reason}
 
@@ -184,6 +188,7 @@ defmodule Helmsman do
     {:ok, Enum.reduce(functions, result, & &1.(&2))}
   end
   def apply_middleware({:error, _} = res, functions), do: res
+
 
   def log(:finish) do
     Logger.info("Finished processing")

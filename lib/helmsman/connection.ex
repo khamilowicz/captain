@@ -5,10 +5,10 @@ defmodule Helmsman.Connection do
   alias Helmsman.Connection.Pool
   alias Helmsman.Utils
 
-  @processing_timeout :timer.minutes(100)
+  @processing_timeout :timer.minutes(1) #TODO Change to actual
   @signal_processing_finished "OnProcessingFinished"
   @processing_path "/Launcher"
-  @disconnect_after :timer.seconds(10)
+  @disconnect_after :timer.minutes(5)
 
   @type t :: %__MODULE__{
     processes: %{required(String.t) => pid},
@@ -29,6 +29,13 @@ defmodule Helmsman.Connection do
   def disconnect(params_or_pid) do
     log(:disconnect, params_or_pid)
     Pool.disconnect(params_or_pid)
+  end
+
+  def send_async_message(connection, %{interface: _interface, path: _path, message: message, member: _member} = params) do
+    log(:sending_message, connection, params)
+    Utils.repeat(
+                 fn -> DBux.PeerConnection.call(connection, {:send_async_message, message, params}) end,
+                 fn(reason) -> log(:connection_error, connection, reason); Process.sleep(100) end)
   end
 
   @spec send_message(pid, map) ::{:ok, [any]} | {:error, [any]}
@@ -66,6 +73,12 @@ defmodule Helmsman.Connection do
     end
   end
 
+  def handle_call({:send_async_message, message, %{interface: _, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
+    log(:send_message, params)
+    {:send, [
+      {identifier, MessageParser.build_message(message, params)},
+    ], add_process(state, identifier, pid)}
+  end
   def handle_call({:send_message, message, %{interface: _, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
     log(:send_message, params)
     {:send, [
@@ -106,12 +119,17 @@ defmodule Helmsman.Connection do
     {:noreply, %{state | state: :up}}
   end
 
-  def terminate(reason, _state) do
+  def terminate(reason, state) do
     disconnect(self)
+    delete_temp_files(state)
     reason
   end
 
   ## Private
+  #
+  def delete_temp_files(state) do
+
+  end
 
   @spec empty?(t) :: boolean
   def empty?(%__MODULE__{processes: %{}}), do: true

@@ -6,6 +6,9 @@ defmodule Helmsman.Processor.Connection do
   def send_message(connection, message),
   do: connection_provider.send_message(connection, message)
 
+  def send_async_message(connection, message),
+  do: connection_provider.send_async_message(connection, message)
+
   def establish_connection(connection_options),
   do: connection_provider.connect(connection_options)
 
