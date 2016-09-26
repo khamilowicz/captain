@@ -2,6 +2,8 @@ defmodule Mapmaker.ProcessingTask do
   use GenServer
   require Logger
 
+  alias Mapmaker.ProcessingTasksSup
+
   @type t :: %__MODULE__{
     task: Task.t
   }
@@ -12,7 +14,7 @@ defmodule Mapmaker.ProcessingTask do
 
   @spec run(fun) :: t
   def run(fun) do
-    {:ok, pid} = Supervisor.start_child(Mapmaker.ProcessingTaskSup, [fun])
+    {:ok, pid} = ProcessingTasksSup.start_processing([fun])
     %__MODULE__{
       task: pid
     }
@@ -20,7 +22,7 @@ defmodule Mapmaker.ProcessingTask do
 
   @spec run(module, fun, any) :: t
   def run(module, fun, args) do
-    {:ok, pid} = Supervisor.start_child(Mapmaker.ProcessingTaskSup, [module, fun, args])
+    {:ok, pid} = ProcessingTasksSup.start_processing([module, fun, args])
     %__MODULE__{
       task: pid
     }
@@ -42,7 +44,7 @@ defmodule Mapmaker.ProcessingTask do
     init(fn -> :erlang.apply(module, fun, args) end)
   end
   def init(fun) when is_function(fun) do
-    task = Task.async_nolink(fun)
+    task = ProcessingTasksSup.start_task(fun)
     Logger.info("Starting task #{inspect task.ref}")
     {:ok, %{ref: task.ref, task: task, result: :running}}
   end
@@ -52,14 +54,12 @@ defmodule Mapmaker.ProcessingTask do
     {:noreply, %{state | result: {:ok, result}}}
   end
   def handle_info({:DOWN, ref, _, _, :normal}, %{ref: ref} = state) do
-    Logger.debug("Task #{inspect ref} stopped")
     {:noreply, state}
   end
   def handle_info({:DOWN, ref, _, _, reason}, %{ref: ref} = state) do
     Logger.warn("Task #{inspect ref} erred #{inspect reason}")
     {:noreply, %{state | result: {:error, reason}}}
   end
-  def handle_info({:EXIT, _, :normal}, state), do: {:noreply, state}
   def handle_info(message, state) do
     Logger.warn("Unhandled #{inspect message}")
     {:noreply, state}

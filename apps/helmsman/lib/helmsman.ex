@@ -164,7 +164,7 @@ defmodule Helmsman do
 
   @spec result(Task.t) :: result | :running
   def result(task) do
-    Task.await(task, @max_processing_time)
+    Task.await(task, @max_processing_time) |> handle_result
   end
 
   @spec handle_result({result, t}) :: result
