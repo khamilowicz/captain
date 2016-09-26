@@ -311,7 +311,9 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
       assert_received {:processor_called, Mapmaker.SpecHelpers.OneToOne, %{"in1" =>   "http://www.example.orgaalva"}}
 
-      assert_received {:postprocessor_called, Mapmaker.SpecHelpers.DoNothing, h}
+      assert_received {Mapmaker.SpecHelpers.DoNothing, i}
+      assert_received {Mapmaker.SpecHelpers.DoNothing, h}
+      assert i == "http://www.example.org"
       assert h == result["h"]
 
       assert_received {:processor_called, Mapmaker.SpecHelpers.VariableToOne, %{"inN" => [
@@ -328,11 +330,15 @@ defmodule Mapmaker.Pipeline.RunnerTest do
       "one.to.two"      => Mapmaker.SpecHelpers.OneToTwo,
       "one.to.variable" => Mapmaker.SpecHelpers.OneToVariable,
     }
-    postprocessors = %{
-      "upload" => Mapmaker.SpecHelpers.DoNothing
-    }
-    Mapmaker.ProcessorsHelpers.configure_processors(%{processors: processors, postprocessors: postprocessors})
-    :ok
+      postprocessors = %{
+        "upload" => Mapmaker.SpecHelpers.DoNothing,
+        "download" => Mapmaker.SpecHelpers.DoNothing
+      }
+      Mapmaker.ProcessorsHelpers.configure_processors(%{
+                                                      processors: processors,
+                                                      postprocessors: postprocessors,
+                                                    })
+      :ok
   end
 end
 

@@ -1,6 +1,7 @@
-defmodule Mapmaker.Pipeline.Output do
-  defstruct [:name, :postprocess]
+defmodule Mapmaker.Pipeline.InOut do
+  defstruct [:name, :process, :value]
 
-  def postprocess(output), do: output.postprocess
-  def name(output), do: output.name
+  def process(io), do: io.process
+  def name(io), do: io.name
+  def value(io), do: io.value
 end

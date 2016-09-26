@@ -1,4 +1,4 @@
-defmodule Mapmaker.Pipeline.Postprocess do
+defmodule Mapmaker.Pipeline.Process do
 
   @spec run(map, String.t) :: {:ok, map} | {:error, any}
   def run(input, nil), do: {:ok, input}

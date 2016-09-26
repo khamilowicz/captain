@@ -9,7 +9,7 @@ config :mapmaker, :processors, %{
   "any" => Helmsman.Processor.General
   }
 config :mapmaker, :postprocessors, %{
-  "download" => Helmsman.Postprocessors.Download
+  "download" => Helmsman.Postprocessors.Download,
   }
 config :mapmaker, :specs, %{
   max_retries: 5,

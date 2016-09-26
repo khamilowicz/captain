@@ -1,7 +1,7 @@
 defmodule Mapmaker.SpecHelpers do
   defmodule DoNothing do
     def run(input) do
-      send self, {:postprocessor_called, __MODULE__, input}
+      send self, {__MODULE__, input}
       {:ok, input}
     end
   end

@@ -14,9 +14,16 @@ defmodule HelmsmanTest do
     end
   end
 
+  defmodule DoNothing do
+    def run(input), do: {:ok, input}
+  end
+
   setup(context) do
-      Application.put_env(:mapmaker, :postprocessors, %{"to_json" => Helmsman.Postprocessors.ToJson})
-    :ok
+    Application.put_env(:mapmaker, :postprocessors, %{
+                        "to_json" => Helmsman.Postprocessors.ToJson,
+                        "fetch"   => HelmsmanTest.DoNothing
+                      })
+      :ok
   end
 
   describe "Given Mapper has processors set up" do

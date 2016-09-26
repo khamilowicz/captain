@@ -5,7 +5,7 @@ defmodule Helmsman.Connection do
   alias Helmsman.Connection.Pool
   alias Helmsman.Utils
 
-  @processing_timeout :timer.seconds(1) #TODO Change to actual
+  @processing_timeout :timer.minutes(1000) #TODO Change to actual
   @signal_processing_finished "OnProcessingFinished"
   @signal_file_error "OnFileError"
   @processing_path "/Launcher"

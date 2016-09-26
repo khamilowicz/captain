@@ -6,7 +6,7 @@ defmodule Mapmaker.Pipeline.Runner do
   Directs inputs and outputs between processors, using rules from pipeline.
   """
 
-  alias Mapmaker.{Pipeline, Structure, Runnable, Pipeline.Postprocess, Pipeline.Output}
+  alias Mapmaker.{Pipeline, Structure, Runnable, Pipeline.Process, Pipeline.InOut}
 
 
   @spec run(Pipeline.t | Structure.t, map, list, map) :: {:ok, any} | {:error, String.t}
@@ -21,12 +21,22 @@ defmodule Mapmaker.Pipeline.Runner do
     run(main_pipeline, input, output, extra)
   end
   def run(%Pipeline{} = pipeline, input, output_specification, extra) do
-
+    input = process_input(input)
     {executed_pipeline, result} = Runnable.run(pipeline, input, extra)
 
     case Pipeline.status(executed_pipeline) do
       :failed -> {:error, result}
       :done -> {:ok, process_result(result, output_specification, extra)}
+    end
+  end
+
+  def process_input(input) when is_map(input), do: input
+  def process_input(input) do
+    for inp <- input, into: %{} do
+      case Process.run(InOut.value(inp), InOut.process(inp)) do
+        {:ok, res} -> {InOut.name(inp), res}
+        {:error, reason} -> {InOut.name(inp), %{error: reason}}
+      end
     end
   end
 
@@ -40,9 +50,9 @@ defmodule Mapmaker.Pipeline.Runner do
 
   def do_process_result(result, output_specification, extra) do
     for out <- output_specification, into: %{} do
-      case Postprocess.run(result[Output.name(out)], Output.postprocess(out)) do
-        {:ok, res} -> {Output.name(out), res}
-        {:error, reason} -> {Output.name(out), %{error: reason}}
+      case Process.run(result[InOut.name(out)], InOut.process(out)) do
+        {:ok, res} -> {InOut.name(out), res}
+        {:error, reason} -> {InOut.name(out), %{error: reason}}
       end
     end
   end

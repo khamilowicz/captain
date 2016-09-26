@@ -2,7 +2,7 @@
   "inputs": [{
     "value": "/path/to/file",
     "name": "file",
-    "preproc": "download"
+    "preproc": "fetch"
   }],
   "outputs": [{
     "name": "special_processing",
