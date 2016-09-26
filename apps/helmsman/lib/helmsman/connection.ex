@@ -5,8 +5,9 @@ defmodule Helmsman.Connection do
   alias Helmsman.Connection.Pool
   alias Helmsman.Utils
 
-  @processing_timeout :timer.minutes(1) #TODO Change to actual
+  @processing_timeout :timer.minutes(1000) #TODO Change to actual
   @signal_processing_finished "OnProcessingFinished"
+  @signal_file_error "OnFileError"
   @processing_path "/Launcher"
   @disconnect_after :timer.minutes(5)
 
@@ -109,6 +110,16 @@ defmodule Helmsman.Connection do
       {:noreply, state}
     end
   end
+  def handle_signal(_serial, _sender, @processing_path, @signal_file_error, _interface, body, state) do
+    log(:signal, %{path: @processing_path, member: @signal_processing_finished, body: body})
+    [_method, identifier, _, result] = body
+    if handles_identifier?(state, identifier) do
+      return_error(state, identifier, result)
+      {:noreply, remove_process(state, identifier)}
+    else
+      {:noreply, state}
+    end
+  end
   def handle_signal(_serial, _sender, path, member, interface, body, state) do
     log(:signal, %{path: path, member: member, body: body})
     {:noreply, state}
@@ -171,7 +182,7 @@ defmodule Helmsman.Connection do
       {:response, :ok, body} -> {:ok, List.wrap(body)}
       {:response, :error, body} -> {:error, List.wrap(body)}
     after
-      @processing_timeout -> throw(:timeout)
+      @processing_timeout -> throw(:here_timeout)
     end
   end
 

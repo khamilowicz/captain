@@ -30,8 +30,7 @@ defmodule Mapmaker.Spec do
     output: %{atom => String.t},
   }
 
-  #TODO: Make it more flexible
-  @task_blocking_time 10
+  @task_blocking_time 5000
   @max_retries Map.get(Application.get_env(:mapmaker, :specs), :max_retries, 5)
 
   @derive [Mapmaker.Pipeable, Mapmaker.Runnable]
@@ -75,7 +74,7 @@ defmodule Mapmaker.Spec do
   def handle_processor_output(%ProcessingTask{} = task) do
     case ProcessingTask.result(task, @task_blocking_time) do
       :running -> {:running, task}
-      {:exit, reason} -> throw(reason)
+      {:error, reason} -> throw(reason)
       {:ok, result} -> handle_processor_output(result)
     end
   end
@@ -99,16 +98,16 @@ defmodule Mapmaker.Spec do
       extra = Map.put(extra, :output, spec.output)
       do_run(spec, Utils.input_joins(spec.input, input), extra)
     catch
-      any -> {retry(spec), %{error: any}}
+      any -> {retry(spec, any), %{error: any}}
     end
   end
 
-  def retry(%{retries: retries} = spec) when retries < @max_retries,
-    do: %{spec | retries: retries + 1}
-  def retry(%{retries: retries} = spec) when retries >= @max_retries,
-    do: Runnable.fail(spec)
+  def retry(%{retries: retries} = spec, _error) when retries < @max_retries,
+    do: %{spec | retries: retries + 1, state: nil}
+  def retry(%{retries: retries} = spec, error) when retries >= @max_retries,
+    do: Runnable.fail(%{spec | state: error})
 
-  def do_run(%{status: :running, state: state} = spec, _input, _extra) do
+  def do_run(%{status: :running, state: state} = spec, _input, _extra) when not is_nil(state) do
     state |> handle_processor_output |> handle_computation_status(spec)
   end
   def do_run(spec, input, extra) do

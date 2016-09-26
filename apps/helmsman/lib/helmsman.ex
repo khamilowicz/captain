@@ -134,8 +134,11 @@ defmodule Helmsman do
   }
   @type result :: {:ok, map} | {:error, map}
 
+  @max_processing_time :timer.minutes(1000)
+
   require Logger
   alias Helmsman.Processor.Cleanup
+  alias Mapmaker.ProcessingTask
 
   defstruct [:structure, :io, :runner]
 
@@ -161,11 +164,7 @@ defmodule Helmsman do
 
   @spec result(Task.t) :: result | :running
   def result(task) do
-    case Task.yield(task) do
-      nil -> :running
-      {:exit, reason} -> throw(reason)
-      {:ok, result} -> handle_result(result)
-    end
+    Task.await(task, @max_processing_time)
   end
 
   @spec handle_result({result, t}) :: result

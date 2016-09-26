@@ -9,7 +9,8 @@ defmodule Helmsman.Processor.Connection do
   def send_async_message(connection, message),
   do: connection_provider.send_async_message(connection, message)
 
-  def establish_connection(connection_options),
+  def establish_connection(connection_options)
+  when is_map(connection_options),
   do: connection_provider.connect(connection_options)
 
   def disconnect(connection_options_or_pid),

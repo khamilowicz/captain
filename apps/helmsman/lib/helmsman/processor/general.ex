@@ -1,5 +1,6 @@
 defmodule Helmsman.Processor.General do
   alias Helmsman.{Processor, Processor.FileManager}
+  require Logger
 
   def run(input, extra) do
     Mapmaker.ProcessingTask.run(fn ->

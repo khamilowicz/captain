@@ -11,14 +11,14 @@ defmodule Helmsman.Processor do
   end
 
   def delete_files(connection, filenames), do: Enum.map(filenames, &delete_file(connection, &1))
-  def delete_file(conn_options_or_connection, filename) do
+  def delete_file(conn_options, filename) do
     params =
       Message.build([])
       |> Message.put_options(config("delete-file")["message"])
       |> Message.put_input({filename})
       |> Message.format
 
-    with {:ok, connection} <- Connection.establish_connection(conn_options_or_connection) do
+    with {:ok, connection} <- Connection.establish_connection(conn_options) do
       Connection.send_async_message(connection, params)
     end
   end

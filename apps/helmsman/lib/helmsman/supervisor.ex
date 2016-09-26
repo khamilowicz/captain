@@ -10,6 +10,7 @@ defmodule Helmsman.Supervisor do
 
     children = [
       supervisor(Helmsman.Connection.Supervisor, []),
+      supervisor(Mapmaker.ProcessingTaskSup, []),
       worker(Helmsman.Connection.Pool, [[name: Helmsman.Connection.Pool]])
     ]
 
