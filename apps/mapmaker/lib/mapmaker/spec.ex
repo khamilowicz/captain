@@ -16,7 +16,7 @@ defmodule Mapmaker.Spec do
   "b"
   """
 
-  alias Mapmaker.{Utils, Runnable}
+  alias Mapmaker.{Utils, Runnable, ProcessingTask}
 
   @type status :: :prepared | :failed | :done | :running
 
@@ -71,10 +71,10 @@ defmodule Mapmaker.Spec do
   @spec put_state(t, pid) :: t
   def put_state(spec, state), do: %{spec | state: state}
 
-  @spec handle_processor_output(Task.t | {:ok, map} | {:error, any}) :: {:ok, map} | no_return
-  def handle_processor_output(%Task{} = task) do
-    case Task.yield(task, @task_blocking_time) do
-      nil -> {:running, task}
+  @spec handle_processor_output(ProcessingTask.t | {:ok, map} | {:error, any}) :: {:ok, map} | no_return
+  def handle_processor_output(%ProcessingTask{} = task) do
+    case ProcessingTask.result(task, @task_blocking_time) do
+      :running -> {:running, task}
       {:exit, reason} -> throw(reason)
       {:ok, result} -> handle_processor_output(result)
     end

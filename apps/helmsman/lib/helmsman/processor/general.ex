@@ -2,7 +2,7 @@ defmodule Helmsman.Processor.General do
   alias Helmsman.{Processor, Processor.FileManager}
 
   def run(input, extra) do
-    Task.async(fn ->
+    Mapmaker.ProcessingTask.run(fn ->
       input = generate_output_locations(extra[:output], input)
 
       case Processor.start_processor(extra[:processor], input, extra) do

@@ -5,12 +5,12 @@ defmodule HelmsmanTest do
 
   defmodule FailingDuration do
     def run(_input, _extra) do
-      Task.async(fn -> {:error, "Oh snap!"} end)
+      Mapmaker.ProcessingTask.run(fn -> {:error, "Oh snap!"} end)
     end
   end
   defmodule Duration do
     def run(_input, _extra) do
-      Task.async(fn -> {:ok, %{"out1" => "duration result"}} end)
+      Mapmaker.ProcessingTask.run(fn -> {:ok, %{"out1" => "duration result"}} end)
     end
   end
 

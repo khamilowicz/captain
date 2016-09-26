@@ -18,7 +18,7 @@ defmodule Mapmaker.SpecHelpers do
 
     def run(%{"in1" => in1} = input, _extra) do
       this = self
-      Task.async(fn ->
+      Mapmaker.ProcessingTask.run(fn ->
         time = 10 + :rand.uniform(11)
         Process.sleep(time)
         send this, {:processor_called, __MODULE__, input}
