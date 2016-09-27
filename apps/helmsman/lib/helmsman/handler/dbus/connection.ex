@@ -11,10 +11,10 @@ defmodule Helmsman.Handler.DBus.Connection do
 
   def establish_connection(connection_options)
   when is_map(connection_options),
-  do: connection_provider.connect(connection_options)
+  do: connection_provider.connect_it(connection_options)
 
   def disconnect(connection_options_or_pid),
-  do: connection_provider.disconnect(connection_options_or_pid)
+  do: connection_provider.disconnect_it(connection_options_or_pid)
 
   def connection_options(%{"connection" => %{"address" => address}}),
   do: %{address: address}

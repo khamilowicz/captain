@@ -9,7 +9,7 @@ defmodule Helmsman.Connection.Pool do
     Agent.update(__MODULE__, fn(pool) ->
       {params, pool} = Map.pop(pool, connection)
       pool = Map.delete(pool, params)
-      Supervisor.terminate_child(Helmsman.Connection.Supervisor, connection)
+      :ok = Supervisor.terminate_child(Helmsman.Connection.Supervisor, connection)
       pool
     end)
   end
@@ -17,7 +17,7 @@ defmodule Helmsman.Connection.Pool do
     Agent.update(__MODULE__, fn(pool) ->
       {connection, pool} = Map.pop(pool, params)
       pool = Map.delete(pool, connection)
-      Supervisor.terminate_child(Helmsman.Connection.Supervisor, connection)
+      :ok = Supervisor.terminate_child(Helmsman.Connection.Supervisor, connection)
       pool
     end)
   end

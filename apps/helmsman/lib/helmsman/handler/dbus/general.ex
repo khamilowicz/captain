@@ -10,18 +10,9 @@ defmodule Helmsman.Processor.General do
         # input contains OUTPUT value, processor doesn't need result of operation
         #
         {:error, reason} -> {:error, reason}
-        {:ok, result} -> {:ok, paths_to_urls(extra[:processor], extra[:output], input, result)}
+        {:ok, result} -> {:ok, result} |> IO.inspect
       end
     end)
-  end
-
-  def paths_to_urls(processor, output, input, result) do
-    input
-    |> Map.take(Map.keys(output))
-    |> Enum.map(fn
-      {k, v} -> {k, DBus.path_to_url(processor, v)}
-    end)
-    |> Enum.into(%{})
   end
 
   def generate_output_locations(output, input) do

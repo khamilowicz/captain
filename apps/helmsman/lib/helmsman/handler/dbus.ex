@@ -2,6 +2,9 @@ defmodule Helmsman.Handler.DBus do
 
   alias Helmsman.Handler.DBus.{Config, Connection, Message, FileManager, Cleanup}
 
+  #TODO Make it more flexible
+  @file_host_port 9000
+
   def config_location,
   do: Application.get_env(:helmsman, :processors)[:config]
 
@@ -16,14 +19,14 @@ defmodule Helmsman.Handler.DBus do
     address = connection_config(processor) |> Map.get("address")
     case extract(address, :host) do
       nil -> path
-      host -> "https://#{host}/#{path}"
+      [host, _port] -> "http://#{host}:#{@file_host_port}/#{path}"
     end
   end
 
   def extract(nil, :host), do: nil
   def extract(tcp_address, :host) do
-    case Regex.run(~r{tcp:host=(.+),port}, tcp_address, capture: :all_but_first) do
-      [host] -> host
+    case Regex.run(~r{tcp:host=(.+),port=(.+)}, tcp_address, capture: :all_but_first) do
+      [host, port] -> [host, port]
       _ -> nil
     end
   end
@@ -41,13 +44,13 @@ defmodule Helmsman.Handler.DBus do
     end
   end
 
-  def fetch(conn_options, file_url_with_prefix) do
-    processor_host = conn_options |> Map.get(:address) |> extract(:host)
-    uri = URI.parse(file_url_with_prefix)
+  def fetch(conn_options, file_url) do
+    [processor_host, _port] = conn_options |> Map.get(:address) |> extract(:host) |> IO.inspect
+    uri = URI.parse(file_url) |> IO.inspect
     if uri.host == processor_host do
       uri.path |> String.trim_leading("/")
     else
-      do_fetch(conn_options, file_url_with_prefix)
+      do_fetch(conn_options, file_url)
     end
   end
 
@@ -63,7 +66,12 @@ defmodule Helmsman.Handler.DBus do
 
     with {:ok, connection} <- Connection.establish_connection(conn_options),
          {:ok, file_path} <- Connection.send_message(connection, params),
-    do: file_path
+         :ok <- Connection.disconnect(connection)
+    do
+      file_path
+    else
+      any -> throw(:fetch_error)
+    end
   end
 
   def fetch_files(input, conn_options) do
@@ -90,11 +98,18 @@ defmodule Helmsman.Handler.DBus do
          {:ok, result} <- Connection.send_message(connection, message_params),
          :ok <- cleanup(conn_options, input, extra[:cleaner])
     do
-      {:ok, result}
+      {:ok, paths_to_urls(name, extra[:output], input)}
     else
       # TODO: make it better
       any -> {:error, any}
     end
+  end
+
+  def paths_to_urls(processor, output, input) do
+    input
+    |> Map.take(Map.keys(output))
+    |> Enum.map(fn {k, v} -> {k, path_to_url(processor, v)} end)
+    |> Enum.into(%{})
   end
 
   def cleanup(connection, input, cleaner) do

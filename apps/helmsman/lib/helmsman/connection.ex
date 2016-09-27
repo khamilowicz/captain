@@ -22,14 +22,14 @@ defmodule Helmsman.Connection do
     state: :idle
   ]
 
-  @spec connect(%{address: String.t}) :: {:ok, pid} | {:error, any}
-  def connect(%{address: _address} = params) do
+  @spec connect_it(%{address: String.t}) :: {:ok, pid} | {:error, any}
+  def connect_it(%{address: _address} = params) do
     log(:connect, params)
     Pool.get_or_start_connection(params)
   end
 
-  @spec disconnect(map | pid) :: :ok
-  def disconnect(params_or_pid) do
+  @spec disconnect_it(map | pid) :: :ok
+  def disconnect_it(params_or_pid) do
     log(:disconnect, params_or_pid)
     Pool.disconnect(params_or_pid)
   end
@@ -69,7 +69,7 @@ defmodule Helmsman.Connection do
 
   def handle_info(:disconnect_if_necessary, state) do
     if empty?(state) do
-      disconnect(self)
+      disconnect_it(self)
       {:stop, :normal, state}
     else
       {:noreply, state}
@@ -143,7 +143,8 @@ defmodule Helmsman.Connection do
   end
 
   def terminate(reason, state) do
-    disconnect(self)
+    log(:terminate, reason)
+    disconnect_it(self)
     delete_temp_files(state)
     reason
   end
@@ -234,6 +235,8 @@ defmodule Helmsman.Connection do
   end
   def log(:connect, params), do: Logger.debug("Connecting #{map_to_log params}")
   def log(:disconnect, params), do: Logger.debug("Disconnecting #{map_to_log params}")
+
+  def log(:terminate, reason), do: Logger.warn("Terminate #{inspect reason}")
 
   def map_to_log(pid) when is_pid(pid), do: inspect(pid)
   def map_to_log(enum) when is_map(enum) do
