@@ -1,4 +1,4 @@
-defmodule Helmsman.Processor.Message do
+defmodule Helmsman.Handler.DBus.Message do
   defstruct [:name, :options, :input, :allowed, :identifier]
 
   def build(allowed_input), do: %__MODULE__{allowed: allowed_input, identifier: generate_identifier}

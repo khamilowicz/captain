@@ -137,7 +137,7 @@ defmodule Helmsman do
   @max_processing_time :timer.minutes(1000)
 
   require Logger
-  alias Helmsman.Processor.Cleanup
+  alias Helmsman.Handler.DBus.Cleanup
   alias Mapmaker.ProcessingTask
 
   defstruct [:structure, :io, :runner]

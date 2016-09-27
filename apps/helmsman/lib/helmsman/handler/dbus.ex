@@ -1,7 +1,6 @@
-defmodule Helmsman.Processor do
+defmodule Helmsman.Handler.DBus do
 
-  alias Helmsman.Processor.{Config, Connection, Message, FileManager, Cleanup}
-  alias Helmsman.Postprocessors.Fetch
+  alias Helmsman.Handler.DBus.{Config, Connection, Message, FileManager, Cleanup}
 
   def config_location,
   do: Application.get_env(:helmsman, :processors)[:config]

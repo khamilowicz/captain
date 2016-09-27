@@ -1,4 +1,4 @@
-defmodule Helmsman.Processor.FileManager do
+defmodule Helmsman.Handler.DBus.FileManager do
 
   @identifier "hpFMf"
 

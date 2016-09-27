@@ -1,12 +1,12 @@
 defmodule Helmsman.Processor.General do
-  alias Helmsman.{Processor, Processor.FileManager}
+  alias Helmsman.Handler.{DBus, DBus.FileManager}
   require Logger
 
   def run(input, extra) do
     Mapmaker.ProcessingTask.run(fn ->
       input = generate_output_locations(extra[:output], input)
 
-      case Processor.start_processor(extra[:processor], input, extra) do
+      case DBus.start_processor(extra[:processor], input, extra) do
         # input contains OUTPUT value, processor doesn't need result of operation
         #
         {:error, reason} -> {:error, reason}
@@ -19,7 +19,7 @@ defmodule Helmsman.Processor.General do
     input
     |> Map.take(Map.keys(output))
     |> Enum.map(fn
-      {k, v} -> {k, Processor.path_to_url(processor, v)}
+      {k, v} -> {k, DBus.path_to_url(processor, v)}
     end)
     |> Enum.into(%{})
   end

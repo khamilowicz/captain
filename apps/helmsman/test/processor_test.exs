@@ -1,4 +1,4 @@
-defmodule Helmsman.ProcessorTest do
+defmodule Helmsman.DBusTest do
   use ExUnit.Case, async: true
 
   import Helmsman.ProcessorHelpers
@@ -13,6 +13,6 @@ defmodule Helmsman.ProcessorTest do
         "interface" => "org.neutrino.DBus",
         "member" => "duration",
         "path" => "/Neutrino/Processing/Processor"}
-    } = Helmsman.Processor.config("duration")
+    } = Helmsman.Handler.DBus.config("duration")
   end
 end

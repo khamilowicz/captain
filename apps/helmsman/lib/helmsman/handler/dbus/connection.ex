@@ -1,4 +1,4 @@
-defmodule Helmsman.Processor.Connection do
+defmodule Helmsman.Handler.DBus.Connection do
   @connection_provider Application.get_env(:helmsman, :connection_provider)
 
   def connection_provider, do: @connection_provider
