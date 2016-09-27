@@ -15,7 +15,7 @@ defmodule HelmsmanTest do
   end
 
   defmodule DoNothing do
-    def run(input), do: {:ok, input}
+    def run(input, _extra), do: {:ok, input}
   end
 
   setup(context) do
@@ -60,6 +60,7 @@ defmodule HelmsmanTest do
 
     test "run/1 takes %Helmsman{} and uses General processor" do
       Application.put_env(:mapmaker, :processors, %{"any" => Helmsman.Processor.General})
+      # Application.put_env(:mapmaker, :postprocessors, %{"download" => Helmsman.Postprocessors.Download})
       {:ok, helmsman} = Helmsman.read(file: "test/support/general_structure.json")
 
       runner = Helmsman.run(helmsman)

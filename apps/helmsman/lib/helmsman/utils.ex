@@ -16,4 +16,18 @@ defmodule Helmsman.Utils do
       repeat(fun, on_error, retries - 1)
     end
   end
+
+  @doc """
+  iex> Helmsman.Utils.map_only([1,2,3], &Integer.is_odd/1, & &1*2)
+  [2,2,6]
+  """
+  @spec map_only(any, (any -> boolean), fun) :: list
+  def map_only(list, condition, fun) when is_list(list) do
+    Enum.map(list, fn(el) -> if condition.(el), do: fun.(el), else: el end)
+  end
+  def map_only(map, condition, fun) when is_map(map) do
+    map
+    |> Enum.map(fn({k, el}) -> if condition.(el), do: {k, fun.(el)}, else: {k, el} end)
+    |> Enum.into(%{})
+  end
 end

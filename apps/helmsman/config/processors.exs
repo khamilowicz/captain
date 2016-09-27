@@ -10,6 +10,7 @@ config :mapmaker, :processors, %{
   }
 config :mapmaker, :postprocessors, %{
   "download" => Helmsman.Postprocessors.Download,
+  "fetch" => Helmsman.Postprocessors.Fetch,
   }
 config :mapmaker, :specs, %{
   max_retries: 5,

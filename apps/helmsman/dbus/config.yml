@@ -140,6 +140,12 @@
       - OUTPUT
       - SCALE
 
+"fetch-file":
+  message:
+    interface: org.neutrino.audiomatic.Daemon.Fetcher
+    destination: org.neutrino.audiomatic.daemon.fetcher
+    path: /Fetcher
+    member: DownloadFile
 "delete-file":
   message:
     interface: org.neutrino.audiomatic.Daemon.Fetcher

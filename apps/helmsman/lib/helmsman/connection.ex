@@ -7,8 +7,10 @@ defmodule Helmsman.Connection do
 
   @processing_timeout :timer.minutes(1000) #TODO Change to actual
   @signal_processing_finished "OnProcessingFinished"
+  @signal_download_finished "OnDownloadFinished"
   @signal_file_error "OnFileError"
   @processing_path "/Launcher"
+  @fetcher_path "/Fetcher"
   @disconnect_after :timer.minutes(5)
 
   @type t :: %__MODULE__{
@@ -80,11 +82,11 @@ defmodule Helmsman.Connection do
       {identifier, MessageParser.build_message(message, params)},
     ], add_process(state, identifier, pid)}
   end
-  def handle_call({:send_message, message, %{interface: _, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
+  def handle_call({:send_message, message, %{interface: interface, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
     log(:send_message, params)
     {:send, [
       {identifier, MessageParser.build_message(message, params)},
-      {:add_match, DBux.MessageTemplate.add_match(:signal, nil, "org.neutrino.audiomatic.Daemon.Launcher", nil, nil)},
+      {:add_match, DBux.MessageTemplate.add_match(:signal, nil, interface, nil, nil)},
     ], add_process(state, identifier, pid)}
   end
   def handle_call(_, _, %{state: :idle} = state), do: {:reply, {:error, "Server not connected, try in a second"}, state}
@@ -105,6 +107,16 @@ defmodule Helmsman.Connection do
     [_method, identifier, _, result] = body
     if handles_identifier?(state, identifier) do
       return_result(state, identifier, result)
+      {:noreply, remove_process(state, identifier)}
+    else
+      {:noreply, state}
+    end
+  end
+  def handle_signal(_serial, _sender, @fetcher_path, @signal_download_finished, _interface, body, state) do
+    log(:signal, %{path: @fetcher_path, member: @signal_download_finished, body: body})
+    [identifier, file_path] = body
+    if handles_identifier?(state, identifier) do
+      return_result(state, identifier, file_path)
       {:noreply, remove_process(state, identifier)}
     else
       {:noreply, state}

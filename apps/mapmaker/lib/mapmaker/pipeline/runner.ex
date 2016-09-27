@@ -21,7 +21,7 @@ defmodule Mapmaker.Pipeline.Runner do
     run(main_pipeline, input, output, extra)
   end
   def run(%Pipeline{} = pipeline, input, output_specification, extra) do
-    input = process_input(input)
+    input = process_input(input, extra)
     {executed_pipeline, result} = Runnable.run(pipeline, input, extra)
 
     case Pipeline.status(executed_pipeline) do
@@ -30,10 +30,10 @@ defmodule Mapmaker.Pipeline.Runner do
     end
   end
 
-  def process_input(input) when is_map(input), do: input
-  def process_input(input) do
+  def process_input(input, _extra) when is_map(input), do: input
+  def process_input(input, extra) do
     for inp <- input, into: %{} do
-      case Process.run(InOut.value(inp), InOut.process(inp)) do
+      case Process.run(InOut.value(inp), InOut.process(inp), extra) do
         {:ok, res} -> {InOut.name(inp), res}
         {:error, reason} -> {InOut.name(inp), %{error: reason}}
       end
@@ -50,7 +50,7 @@ defmodule Mapmaker.Pipeline.Runner do
 
   def do_process_result(result, output_specification, extra) do
     for out <- output_specification, into: %{} do
-      case Process.run(result[InOut.name(out)], InOut.process(out)) do
+      case Process.run(result[InOut.name(out)], InOut.process(out), extra) do
         {:ok, res} -> {InOut.name(out), res}
         {:error, reason} -> {InOut.name(out), %{error: reason}}
       end

@@ -4,7 +4,7 @@ defmodule Helmsman.Processor.Message do
   def build(allowed_input), do: %__MODULE__{allowed: allowed_input, identifier: generate_identifier}
 
   def put_options(message, %{"interface" => interface, "path" => path, "member" => member, "destination" => destination}),
-  do: put_options(message, %{interface: interface, path: path, member: member, destination: destination})
+    do: put_options(message, %{interface: interface, path: path, member: member, destination: destination})
   def put_options(message, options), do: %{message | options: options}
 
   def put_input(message, input) when is_tuple(input), do: put_in message.input, input
@@ -12,6 +12,7 @@ defmodule Helmsman.Processor.Message do
 
   def put_name(message, name), do: %{message | name: name}
   def get_identifier(message), do: message.identifier
+  def put_identifier(message, identifier), do: %{message | identifier: identifier}
 
   def format(%{name: name, input: input, options: options, identifier: identifier}) do
     Map.merge(options, %{message: input, identifier: identifier})
