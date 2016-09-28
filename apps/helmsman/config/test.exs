@@ -1,3 +1,4 @@
 use Mix.Config
 
-config :helmsman, :connection_provider, Helmsman.TestConnection
+config :helmsman, :processor_handler, Helmsman.TestConnection
+

@@ -103,6 +103,12 @@ defmodule Helmsman do
           "stereo-to-dual-mono" => MyApplication.Processors.StereoToDualMono,
 					"any" => MyApplication.Processors.DoAllOtherStuff
 				}
+    
+    Mappings between "postproc" and "preproc" modules can be configured with:
+       config :mapmaker, :postprocessors, %{
+          "to_json" => MyApplication.Processors.ToJson
+          "download" => MyApplication.Processors.Download
+				}
 
     ## Connection
 

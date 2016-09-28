@@ -1,12 +1,50 @@
 defmodule Helmsman.Postprocessors do
+  @moduledoc """
+  Postprocessors are transducers changing values passed to it. They are used as `postproc` and `preproc` methods in `Mapmaker.Structure`.
+
+  Postprocessors should implement method `run(value, extra)` where `value` is either input value of result of executing `Mapmaker.Structure`.
+  """
 
   defmodule ToJson do
+    @moduledoc """
+    Postprocessor converting any value to JSON.
+
+         Helmsman.Postprocessor.ToJson.run(%{hello: "hi"}, %{})
+         {:ok, "{\"hello\": \"hi\"}"}
+    """
+
     def run(input, _extra) do
       Poison.encode(input)
     end
   end
 
+  defmodule Fetch do
+    @moduledoc """
+    Preprocessor downloading given url on processor machine.
+
+         Helmsman.Postprocessor.Fetch.run("http://fileurl.com/file.mp3, %{})
+         {:ok, "random filename on processing machine"}
+    """
+    def run(file_url, extra) do
+      options =
+      Helmsman.Handler.DBus.config("format") |> 
+      Helmsman.Handler.DBus.Connection.connection_options
+
+      file_path = Helmsman.Handler.DBus.fetch(options, file_url) |> IO.inspect
+      Process.sleep(60000)
+
+
+      {:ok, file_path}
+    end
+  end
+
   defmodule Download do
+    @moduledoc """
+    Preprocessor downloading given url on client machine..
+
+         Helmsman.Postprocessor.Download.run("http://fileurl.com/file.mp3, %{})
+         {:ok, "random filename on client machine"}
+    """
 
     def run(file_url, extra) do
       filename = to_filename(file_url)
