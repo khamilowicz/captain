@@ -26,13 +26,10 @@ defmodule Helmsman.Handler.DBus.Connection do
   @spec establish_connection(%{address: String.t}) :: {:ok, pid} | {:error, any}
   def establish_connection(%{address: _address} = params) do
     log(:connect, params)
-    Pool.get_or_start_connection(params)
-  end
-
-  @spec disconnect_it(map | pid) :: :ok
-  def disconnect_it(params_or_pid) do
-    log(:disconnect, params_or_pid)
-    Pool.disconnect(params_or_pid)
+    case Pool.get_connection(params) do
+      {:ok, connection} -> {:ok, connection}
+      :no_connection -> Supervisor.start_child(Helmsman.Connection.Supervisor, [params])
+    end
   end
 
   def disconnect(connection), do: DBux.PeerConnection.call(connection, :disconnect)
@@ -70,13 +67,15 @@ defmodule Helmsman.Handler.DBus.Connection do
     initial_state = struct(__MODULE__, params)
     Logger.metadata([address: params[:address]])
     log(:init)
+    Pool.add_connection(self, params)
     {:ok, params[:address], [:anonymous], initial_state}
   end
 
   def handle_info(:disconnect_if_necessary, state) do
-    if empty?(state) do
+    if empty?(state) |> IO.inspect do
       {:stop, :normal, state}
     else
+      disconnect_if_necessary
       {:noreply, state}
     end
   end
@@ -156,16 +155,10 @@ defmodule Helmsman.Handler.DBus.Connection do
 
   def terminate(reason, state) do
     log(:terminate, reason)
-    disconnect_it(self)
-    delete_temp_files(state)
     reason
   end
 
   ## Private
-  #
-  def delete_temp_files(state) do
-
-  end
 
   @spec empty?(t) :: boolean
   def empty?(%__MODULE__{processes: %{}}), do: true
@@ -179,8 +172,12 @@ defmodule Helmsman.Handler.DBus.Connection do
   @spec remove_process(t, String.t) :: t
   def remove_process(state, identifier) do
     new_state = update_in(state.processes, &Map.delete(&1, identifier))
-    if empty?(new_state), do: Process.send_after(self, :disconnect_if_necessary, @disconnect_after)
+    if empty?(new_state), do: disconnect_if_necessary
     new_state
+  end
+
+  def disconnect_if_necessary do
+    Process.send_after(self, :disconnect_if_necessary, @disconnect_after)
   end
 
   @spec add_process(t, String.t, pid) :: t
