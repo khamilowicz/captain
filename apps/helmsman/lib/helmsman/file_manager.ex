@@ -1,4 +1,7 @@
-defmodule Helmsman.Handler.DBus.FileManager do
+defmodule Helmsman.FileManager do
+  @moduledoc """
+  Functions responsible for file management. Duh.
+  """
 
   @identifier "hpFMf"
 
