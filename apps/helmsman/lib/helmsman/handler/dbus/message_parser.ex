@@ -1,4 +1,4 @@
-defmodule Helmsman.Connection.MessageParser do
+defmodule Helmsman.Handler.DBus.MessageParser do
   alias Helmsman.Utils
 
   def build_message(message, %{interface: interface, member: member, path: path, destination: destination}) do

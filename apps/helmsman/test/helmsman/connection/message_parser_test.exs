@@ -1,7 +1,7 @@
 defmodule Helmsman.MessageParserTest do
   use ExUnit.Case, async: true
 
-  alias Helmsman.Connection.MessageParser
+  alias Helmsman.Handler.DBus.MessageParser
   doctest MessageParser
 
   describe "build_message builds DBux message" do

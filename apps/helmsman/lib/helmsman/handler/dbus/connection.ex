@@ -2,7 +2,7 @@ defmodule Helmsman.Handler.DBus.Connection do
 
   require Logger
   use DBux.PeerConnection
-  alias Helmsman.Connection.MessageParser
+  alias Helmsman.Handler.DBus.MessageParser
   alias Helmsman.Connection.Pool
   alias Helmsman.Utils
 
