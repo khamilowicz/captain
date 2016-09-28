@@ -1,17 +1,11 @@
 defmodule Helmsman.Processor.General do
-  alias Helmsman.Handler.{DBus, DBus.FileManager}
+  alias Helmsman.{Handler, FileManager}
   require Logger
 
   def run(input, extra) do
     Mapmaker.ProcessingTask.run(fn ->
       input = generate_output_locations(extra[:output], input)
-
-      case DBus.start_processor(extra[:processor], input, extra) do
-        # input contains OUTPUT value, processor doesn't need result of operation
-        #
-        {:error, reason} -> {:error, reason}
-        {:ok, result} -> {:ok, result} |> IO.inspect
-      end
+      Handler.start_processor(extra[:processor], input, extra)
     end)
   end
 

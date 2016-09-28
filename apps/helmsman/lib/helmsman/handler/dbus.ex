@@ -1,6 +1,10 @@
 defmodule Helmsman.Handler.DBus do
+  @moduledoc """
+  Adapter for messaging processing machines via DBus.
+  """
 
-  alias Helmsman.Handler.DBus.{Config, Connection, Message, FileManager, Cleanup}
+  alias Helmsman.Handler.DBus.{Config, Connection, Message, Cleanup}
+  alias Helmsman.FileManager
 
   #TODO Make it more flexible
   @file_host_port 9000
@@ -12,6 +16,9 @@ defmodule Helmsman.Handler.DBus do
     config = Config.open(config_location)
     config[name] || config["any"]
   end
+
+  def connection_options(%{"connection" => %{"address" => address}}),
+  do: %{address: address}
 
   def connection_config(name), do: Map.get(config(name), "connection")
 
@@ -45,8 +52,8 @@ defmodule Helmsman.Handler.DBus do
   end
 
   def fetch(conn_options, file_url) do
-    [processor_host, _port] = conn_options |> Map.get(:address) |> extract(:host) |> IO.inspect
-    uri = URI.parse(file_url) |> IO.inspect
+    [processor_host, _port] = conn_options |> Map.get(:address) |> extract(:host)
+    uri = URI.parse(file_url)
     if uri.host == processor_host do
       uri.path |> String.trim_leading("/")
     else
@@ -66,7 +73,7 @@ defmodule Helmsman.Handler.DBus do
 
     with {:ok, connection} <- Connection.establish_connection(conn_options),
          {:ok, file_path} <- Connection.send_message(connection, params),
-         :ok <- Connection.disconnect(connection)
+         :ok = Connection.disconnect(connection)
     do
       file_path
     else
@@ -80,11 +87,11 @@ defmodule Helmsman.Handler.DBus do
   def is_url?("http" <> _ = url), do: true
   def is_url?(_), do: false
 
-  def start_processor(name, input, extra) do
+  def start_processor(name, input, extra, fetch \\ true) do
 
     processor_config = config(name)
-    conn_options = Connection.connection_options(processor_config)
-    input = fetch_files(input, conn_options)
+    conn_options = connection_options(processor_config)
+    input = if fetch, do: fetch_files(input, conn_options), else: input
 
     message =
       Message.build(processor_config["message"]["arguments"])
@@ -101,6 +108,7 @@ defmodule Helmsman.Handler.DBus do
       {:ok, paths_to_urls(name, extra[:output], input)}
     else
       # TODO: make it better
+      {:error, any} -> {:error, any}
       any -> {:error, any}
     end
   end
