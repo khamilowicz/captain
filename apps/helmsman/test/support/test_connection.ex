@@ -9,6 +9,10 @@ defmodule Helmsman.TestConnection do
     {:ok, input}
   end
 
+  def start_link(opts) do
+    Agent.start_link(fn -> opts end)
+  end
+
   def send_message(connection, params) do
     state = Agent.get(connection, & &1)
     {:ok, %{state | message_params: params}}

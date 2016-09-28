@@ -60,6 +60,7 @@ defmodule HelmsmanTest do
 
     test "run/1 takes %Helmsman{} and uses General processor" do
       Application.put_env(:mapmaker, :processors, %{"any" => Helmsman.Processor.General})
+      Application.put_env(:helmsman, :handler, [connection: Helmsman.TestConnection, mod: Helmsman.TestConnection])
       # Application.put_env(:mapmaker, :postprocessors, %{"download" => Helmsman.Postprocessors.Download})
       {:ok, helmsman} = Helmsman.read(file: "test/support/general_structure.json")
 

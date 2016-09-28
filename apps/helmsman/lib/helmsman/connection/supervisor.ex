@@ -8,8 +8,10 @@ defmodule Helmsman.Connection.Supervisor do
   def init(:ok) do
     import Supervisor.Spec, warn: false
 
+    connection_module = Application.get_env(:helmsman, :handler)[:connection]
+
     children = [
-      worker(Helmsman.Connection, [], restart: :transient)
+      worker(connection_module, [], restart: :transient)
     ]
 
     options = [

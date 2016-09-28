@@ -2,8 +2,6 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :helmsman, :processor_handler, Helmsman.Connection
-
 config :logger, :console,
 	format: "\n$time $metadata[$level] $levelpad$message\n",
 	metadata: [:module, :pid, :address]

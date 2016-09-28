@@ -1,17 +1,20 @@
 defmodule Helmsman.Handler do
   @moduledoc """
-  `Helmsman.Handler` uses configured `:processor_handler` to execute `processor` with given `input`.
+  `Helmsman.Handler` uses configured `:handler` to execute `processor` with given `input`.
 
   By default `Helmsman.Handler.DBus` is used to communicate with processing machines.
   For details see `Helmsman.Handler.DBus` documentation.
 
   Processor handler can be configured with:
 
-      config :helmsman,
-        processor_handler: MyApplication.CustomHandlder
+      config :helmsman, :handler,
+        mod: MyApplication.CustomHandlder,
+        connection: MyApplication.HandlerConnection
 
   `MyApplication.CustomHandlder` should implement `start_processor` function.
   For details see `Helmsman.Handler.start_processor/3`.
+
+  `MyApplication.HandlerConnection` should be supervisor responsible for spawning connections with processor server.
   """
 
   @doc """
@@ -19,5 +22,5 @@ defmodule Helmsman.Handler do
 
   By default `Handler` uses `Helmsman.Handler.DBus` to send data to processing machine and return result.
   """
-  defdelegate start_processor(processor, input, extra), to: Application.get_env(:helmsman, :processor_handler)
+  defdelegate start_processor(processor, input, extra), to: Application.get_env(:helmsman, :handler)[:mod]
 end
