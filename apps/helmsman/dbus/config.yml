@@ -5,7 +5,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: org.neutrino.audiomatic.Daemon.Launcher.StartProcessor
+    member: org.neutrino.audiomatic.Daemon.Launcher.StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -17,7 +17,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -31,7 +31,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT_LEFT_CHANNEL
       - INPUT_RIGHT_CHANNEL
@@ -44,7 +44,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -56,7 +56,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT_LEFT_CHANNEL
@@ -69,7 +69,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -81,7 +81,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -94,7 +94,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -108,7 +108,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -122,7 +122,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
@@ -134,7 +134,7 @@
     interface: org.neutrino.audiomatic.Daemon.Launcher
     destination: org.neutrino.audiomatic.daemon.launcher
     path: /Launcher
-    member: StartProcessor
+    member: StartProcess
     arguments:
       - INPUT
       - OUTPUT
