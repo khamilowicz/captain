@@ -28,11 +28,9 @@ defmodule Helmsman.Postprocessors do
     def run(file_url, extra) do
       options =
       Helmsman.Handler.DBus.config("format") |> 
-      Helmsman.Handler.DBus.Connection.connection_options
+      Helmsman.Handler.DBus.connection_options
 
-      file_path = Helmsman.Handler.DBus.fetch(options, file_url) |> IO.inspect
-      Process.sleep(60000)
-
+      [file_path] = Helmsman.Handler.DBus.fetch(options, file_url)
 
       {:ok, file_path}
     end
@@ -47,7 +45,12 @@ defmodule Helmsman.Postprocessors do
     """
 
     def run(file_url, extra) do
-      filename = to_filename(file_url)
+      IO.inspect(extra)
+      filename = case Map.get(extra, "ext") do
+        nil -> Map.get(extra, "filename", to_filename(file_url))
+        ext -> Map.get(extra, "filename", to_filename(file_url)) <> "." <> ext
+      end
+
       with {:ok, file} <- File.open(filename, [:write]),
       {:ok, %{id: ref}} <- HTTPoison.get(file_url, %{}, stream_to: self),
       :ok <- receive_file(file, ref),
