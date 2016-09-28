@@ -32,7 +32,7 @@ defmodule Helmsman.Handler.DBus.Connection do
     end
   end
 
-  def disconnect(connection), do: DBux.PeerConnection.call(connection, :disconnect) |> IO.inspect
+  def disconnect(connection), do: DBux.PeerConnection.call(connection, :disconnect)
 
   def send_async_message(connection, %{interface: _interface, path: _path, message: message, member: _member} = params) do
     log(:sending_message, connection, params)
@@ -72,7 +72,7 @@ defmodule Helmsman.Handler.DBus.Connection do
   end
 
   def handle_info(:disconnect_if_necessary, state) do
-    if empty?(state) |> IO.inspect do
+    if empty?(state) do
       {:stop, :normal, state}
     else
       disconnect_if_necessary
@@ -81,7 +81,6 @@ defmodule Helmsman.Handler.DBus.Connection do
   end
 
   def handle_info(any, state) do
-    IO.inspect(any)
     {:noreply, state}
   end
 

@@ -45,7 +45,6 @@ defmodule Helmsman.Postprocessors do
     """
 
     def run(file_url, extra) do
-      IO.inspect(extra)
       filename = case Map.get(extra, "ext") do
         nil -> Map.get(extra, "filename", to_filename(file_url))
         ext -> Map.get(extra, "filename", to_filename(file_url)) <> "." <> ext
