@@ -40,10 +40,11 @@ defmodule Helmsman.Handler.DBus do
 
   def delete_files(connection, filenames), do: Enum.map(filenames, &delete_file(connection, &1))
   def delete_file(conn_options, filename) do
+    identifier = Message.generate_identifier
     params =
       Message.build([])
       |> Message.put_options(config("delete-file")["message"])
-      |> Message.put_input({filename})
+      |> Message.put_input({identifier, filename})
       |> Message.format
 
     with {:ok, connection} <- Connection.establish_connection(conn_options) do
@@ -64,16 +65,17 @@ defmodule Helmsman.Handler.DBus do
   def do_fetch(conn_options, file_url) do
     file_path = FileManager.generate_file_name("fetch")
 
+    identifier = Message.generate_identifier
+
     params =
       Message.build([])
       |> Message.put_options(config("fetch-file")["message"])
       |> Message.put_identifier(file_url)
-      |> Message.put_input({file_url, file_path})
+      |> Message.put_input({identifier, file_url, file_path})
       |> Message.format
 
     with {:ok, connection} <- Connection.establish_connection(conn_options),
-         {:ok, file_path} <- Connection.send_message(connection, params),
-         :ok = Connection.disconnect(connection)
+         {:ok, [file_path]} <- Connection.send_message(connection, params)
     do
       file_path
     else

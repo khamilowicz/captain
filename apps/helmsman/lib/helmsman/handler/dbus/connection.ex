@@ -32,7 +32,7 @@ defmodule Helmsman.Handler.DBus.Connection do
     end
   end
 
-  def disconnect(connection), do: DBux.PeerConnection.call(connection, :disconnect)
+  def disconnect(connection), do: DBux.PeerConnection.call(connection, :disconnect) |> IO.inspect
 
   def send_async_message(connection, %{interface: _interface, path: _path, message: message, member: _member} = params) do
     log(:sending_message, connection, params)
@@ -81,13 +81,23 @@ defmodule Helmsman.Handler.DBus.Connection do
   end
 
   def handle_info(any, state) do
+    IO.inspect(any)
     {:noreply, state}
   end
+
+  def handle_call(:disconnect, _, state), do: {:stop, :normal, :ok, state}
 
   def handle_call({:send_async_message, message, %{interface: _, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
     log(:send_message, params)
     {:send, [
       {identifier, MessageParser.build_message(message, params)},
+    ], add_process(state, identifier, pid)}
+  end
+  def handle_call({:send_message, message, %{interface: "org.neutrino.audiomatic.Daemon.Launcher" = interface, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
+    log(:send_message, params)
+    {:send, [
+      {identifier, MessageParser.build_message(message, params)},
+      {:add_match, DBux.MessageTemplate.add_match(:signal, nil, interface, nil, nil)},
     ], add_process(state, identifier, pid)}
   end
   def handle_call({:send_message, message, %{interface: interface, path: _, member: _, identifier: identifier} = params}, {pid, _ref}, %{state: :up} = state) do
@@ -99,7 +109,7 @@ defmodule Helmsman.Handler.DBus.Connection do
   end
   def handle_call({:send_async_message, _, _}, _, %{state: :idle} = state), do: {:reply, {:error, "Server not connected, try in a second"}, state}
   def handle_call({:send_message, _, _}, _, %{state: :idle} = state), do: {:reply, {:error, "Server not connected, try in a second"}, state}
-  def handle_call(:disconnect, _, state), do: {:stop, :normal, :ok,  state}
+
 
   def handle_down(state) do
     log(:down)
@@ -125,7 +135,7 @@ defmodule Helmsman.Handler.DBus.Connection do
   end
   def handle_signal(_serial, _sender, @fetcher_path, @signal_download_finished, _interface, body, state) do
     log(:signal, %{path: @fetcher_path, member: @signal_download_finished, body: body})
-    [identifier, file_path] = body
+    [_, _, identifier, file_path] = body
     if handles_identifier?(state, identifier) do
       return_result(state, identifier, file_path)
       {:noreply, remove_process(state, identifier)}
