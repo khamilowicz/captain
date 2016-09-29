@@ -12,6 +12,7 @@ defmodule Helmsman.Handler.DBus do
   def config_location,
   do: Application.get_env(:helmsman, :processors)[:config]
 
+  @spec config(String.t) :: map
   def config(name) do
     config = Config.open(config_location)
     config[name] || config["any"]
@@ -22,6 +23,7 @@ defmodule Helmsman.Handler.DBus do
 
   def connection_config(name), do: Map.get(config(name), "connection")
 
+  @spec path_to_url(String.t, String.t) :: String.t
   def path_to_url(processor, path) do
     address = connection_config(processor) |> Map.get("address")
     case extract(address, :host) do
@@ -38,7 +40,9 @@ defmodule Helmsman.Handler.DBus do
     end
   end
 
-  def delete_files(connection, filenames), do: Enum.map(filenames, &delete_file(connection, &1))
+  def delete_files(conn_options, filenames), do: Enum.map(filenames, &delete_file(conn_options, &1))
+
+  @spec delete_file(map, String.t) :: :ok | {:error, any}
   def delete_file(conn_options, filename) do
     identifier = Message.generate_identifier
     params =
@@ -52,6 +56,7 @@ defmodule Helmsman.Handler.DBus do
     end
   end
 
+  @spec fetch(map, String.t) :: String.t
   def fetch(conn_options, file_url) do
     [processor_host, _port] = conn_options |> Map.get(:address) |> extract(:host)
     uri = URI.parse(file_url)
@@ -86,14 +91,17 @@ defmodule Helmsman.Handler.DBus do
   def fetch_files(input, conn_options) do
     Helmsman.Utils.map_only(input, &is_url?/1, &fetch(conn_options, &1))
   end
+
+  @spec is_url?(any) :: boolean
   def is_url?("http" <> _ = url), do: true
   def is_url?(_), do: false
 
-  def start_processor(name, input, extra, fetch \\ true) do
+  @spec start_processor(String.t, map, map) :: {:ok, map} | {:error, any}
+  def start_processor(name, input, extra) do
 
     processor_config = config(name)
     conn_options = connection_options(processor_config)
-    input = if fetch, do: fetch_files(input, conn_options), else: input
+    input = fetch_files(input, conn_options)
 
     message =
       Message.build(processor_config["message"]["arguments"])
@@ -115,6 +123,7 @@ defmodule Helmsman.Handler.DBus do
     end
   end
 
+  @spec paths_to_urls(String.t, map, map) :: map
   def paths_to_urls(processor, output, input) do
     input
     |> Map.take(Map.keys(output))
@@ -122,6 +131,7 @@ defmodule Helmsman.Handler.DBus do
     |> Enum.into(%{})
   end
 
+  @spec cleanup(pid, map, map) :: any
   def cleanup(connection, input, cleaner) do
     temp_files = Map.values(input) |> Enum.filter(&FileManager.filename?/1)
     Cleanup.add_cleanup(cleaner, __MODULE__, :delete_files, [connection, temp_files])

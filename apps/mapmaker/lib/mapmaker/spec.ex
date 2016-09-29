@@ -70,7 +70,7 @@ defmodule Mapmaker.Spec do
   @spec put_state(t, pid) :: t
   def put_state(spec, state), do: %{spec | state: state}
 
-  @spec handle_processor_output(ProcessingTask.t | {:ok, map} | {:error, any}) :: {:ok, map} | no_return
+  @spec handle_processor_output(%ProcessingTask{} | {:ok, map}) :: {:running, %ProcessingTask{}} | {:ok, map}
   def handle_processor_output(%ProcessingTask{} = task) do
     case ProcessingTask.result(task, @task_blocking_time) do
       :running -> {:running, task}
@@ -78,7 +78,7 @@ defmodule Mapmaker.Spec do
       {:ok, result} -> handle_processor_output(result)
     end
   end
-  def handle_processor_output({:ok, result}), do: {:ok, result}
+  def handle_processor_output({:ok, result}) when is_map(result), do: {:ok, result}
   def handle_processor_output({:error, reason}), do: throw(reason)
 
   def handle_computation_status({:ok, result}, spec) do

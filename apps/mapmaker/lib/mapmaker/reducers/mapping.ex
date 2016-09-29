@@ -23,7 +23,7 @@ defmodule Mapmaker.Reducers.Mapping do
     output: %{}
   ]
 
-  @spec to_spec(map) :: t | {:error, String.t}
+  @spec to_spec(map) :: %__MODULE__{}
   def to_spec(raw_spec) when is_map(raw_spec) do
     %__MODULE__{
       pipeline: raw_spec["pipeline"],

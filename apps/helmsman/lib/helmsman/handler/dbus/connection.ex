@@ -23,7 +23,7 @@ defmodule Helmsman.Handler.DBus.Connection do
     state: :idle
   ]
 
-  @spec establish_connection(%{address: String.t}) :: {:ok, pid} | {:error, any}
+  @spec establish_connection(map) :: {:ok, pid} | {:error, any}
   def establish_connection(%{address: _address} = params) do
     log(:connect, params)
     case Pool.get_connection(params) do
@@ -34,11 +34,17 @@ defmodule Helmsman.Handler.DBus.Connection do
 
   def disconnect(connection), do: DBux.PeerConnection.call(connection, :disconnect)
 
+  @spec send_async_message(pid, map) :: :ok | {:error, any}
   def send_async_message(connection, %{interface: _interface, path: _path, message: message, member: _member} = params) do
     log(:sending_message, connection, params)
-    Utils.repeat(
-                 fn -> DBux.PeerConnection.call(connection, {:send_async_message, message, params}) end,
-                 fn(reason) -> log(:connection_error, connection, reason); Process.sleep(100) end)
+    result =
+      Utils.repeat(
+                   fn -> DBux.PeerConnection.call(connection, {:send_async_message, message, params}) end,
+                   fn(reason) -> log(:connection_error, connection, reason); Process.sleep(100) end)
+    case result do
+      :ok -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @spec send_message(pid, map) ::{:ok, [any]} | {:error, [any]}

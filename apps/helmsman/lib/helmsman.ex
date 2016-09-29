@@ -138,7 +138,7 @@ defmodule Helmsman do
     io:        map,
     runner:    module
   }
-  @type result :: {:ok, map} | {:error, map}
+  @type result :: {:ok, %{result: any}} | {:error, map}
 
   @max_processing_time :timer.minutes(1000)
 
@@ -148,10 +148,11 @@ defmodule Helmsman do
 
   defstruct [:structure, :io, :runner]
 
-  @spec run(t, map, [(map -> map)]) :: Task.t
+  @spec run(t, map, [(map -> map)]) :: %Task{}
   def run(helmsman, postprocess) when is_list(postprocess), do: run(helmsman, %{}, postprocess)
   def run(helmsman, extra) when is_map(extra), do: run(helmsman, extra, [])
-  def run(helmsman, extra \\ %{}, postprocess \\ []) do
+  def run(%__MODULE__{} = helmsman, extra \\ %{}, postprocess \\ [])
+  when is_map(extra) and is_list(postprocess) do
     Task.async(__MODULE__, :do_run, [helmsman, extra, postprocess])
   end
 
@@ -168,7 +169,7 @@ defmodule Helmsman do
     result
   end
 
-  @spec result(Task.t) :: result | :running
+  @spec result(%Task{}) :: result
   def result(task) do
     Task.await(task, @max_processing_time) |> handle_result
   end

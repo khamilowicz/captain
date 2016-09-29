@@ -5,7 +5,7 @@ defmodule Mapmaker.ProcessingTask do
   alias Mapmaker.ProcessingTasksSup
 
   @type t :: %__MODULE__{
-    task: Task.t
+    task: %Task{}
   }
 
   defstruct [
