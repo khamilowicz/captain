@@ -37,7 +37,7 @@ defmodule Mapmaker.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:dialyxir, "~> 0.3.5"},
+      {:dialyxir, "~> 0.3.5", only: [:dev]},
       {:poison, "~> 2.2.0"},
     ]
   end
