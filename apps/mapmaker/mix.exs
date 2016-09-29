@@ -38,6 +38,7 @@ defmodule Mapmaker.Mixfile do
   defp deps do
     [
       {:dialyxir, "~> 0.3.5", only: [:dev]},
+      {:poison, "~> 2.2.0"},
     ]
   end
 end
