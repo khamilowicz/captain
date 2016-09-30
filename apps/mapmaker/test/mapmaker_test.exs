@@ -28,7 +28,7 @@ defmodule MapmakerTest do
     test "Mapmaker.parse converts map processors structure into pipeline", context do
       processors = Poison.decode!(context.json_structure) # Check if valid JSON
       #TODO: Test it better
-      assert {:ok, %Structure{} = _pipeline, %{inputs: inputs}} = Mapmaker.decode(processors) |> IO.inspect
+      assert {:ok, %Structure{} = _pipeline, %{inputs: inputs}} = Mapmaker.decode(processors)
       assert is_list(inputs)
     end
 

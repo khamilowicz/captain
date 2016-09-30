@@ -50,8 +50,13 @@ defmodule Mapmaker.Pipeline.Runner do
 
   def do_process_result(result, output_specification, extra) do
     for out <- output_specification, into: %{} do
-      case Process.run(result[InOut.name(out)], InOut.process(out), extra) do
-        {:ok, res} -> {InOut.name(out), res}
+      with name <- InOut.name(out),
+           {:ok, result_value} <- Map.fetch(result, name),
+           {:ok, res} <- Process.run(result_value, InOut.process(out), extra)
+      do
+        {name, res}
+      else
+        :error -> {InOut.name(out), %{error: "Key not present in result. Make sure structure contains output key #{InOut.name(out)}"}}
         {:error, reason} -> {InOut.name(out), %{error: reason}}
       end
     end
